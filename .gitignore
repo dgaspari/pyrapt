@@ -1,0 +1,6 @@
+*.pyc
+
+#Packaging
+*.egg-info
+dist
+build
