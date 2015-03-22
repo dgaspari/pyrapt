@@ -1,4 +1,4 @@
-# PyRapt
+# pyrapt
 An implementation of David Talkin's RAPT (Robust Algorithm for Pitch Tracking) in Python. This is an educational excercise as part of my thesis project work at Harvard Extension School.
 
 ### Introduction
