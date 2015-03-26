@@ -1,3 +1,12 @@
 pytest==2.6.4
 pytest-cov==1.8.1
-#numpy==1.9.1
+numpy==1.9.2
+scipy=0.15.1
+
+# Some notes on setting up scipy (for when I try to set this up in Travis CI):
+# Per my readme, need fortran compiler, plus some underlying packages available.
+# On my ubuntu box I ended up doing these apt-get calls:
+# sudo apt-get install python-pip python-dev build-essential
+# sudo apt-get install libamd2.2.0 libblas3gf libc6 libgcc1 libgfortran3 liblapack3gf libumfpack5.4.0 libstdc++6 build-essential gfortran libatlas-sse2-dev python-all-dev
+# sudo apt-get install libatlas-base-dev gfortran
+#

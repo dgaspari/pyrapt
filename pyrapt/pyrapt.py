@@ -3,6 +3,8 @@ This module defines the Pyrapt class, which encapsulates an implementation of
 David Talkin's Robust Algorithm for Pitch Tracking (RAPT).
 """
 
+from scipy.io import wavfile
+
 class Pyrapt(object):
     """ 
     This class handles the processing of a speech audio sample and the output
@@ -18,3 +20,15 @@ class Pyrapt(object):
         aReturn = initial_sampling_rate / round( initial_sampling_rate / (4 * maximum_f0) )
         return aReturn
 
+    @staticmethod
+    def demo(wavfile_path):
+        """
+        Rough demo of the RAPT alg process - downsampling input audio, cross-correlation
+        first pass on downsampled audio, then second pass on the original audio. Followed
+        by the dynamic programming steps. The logic here will be refined in the rest of
+        class.
+        """
+        #get audio input data using scipy.io wav reader:
+        original_audio = wavfile.read(wavfile_path)
+        downsampling_rate = Pyrapt.calculate_downsampling_rate(original_audio[0], 500) #2nd arg could be constant configurable - max Fzero
+        return downsampling_rate
