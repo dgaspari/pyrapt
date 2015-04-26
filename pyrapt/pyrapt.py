@@ -1,7 +1,6 @@
 """
-This module defines the Pyrapt class, which encapsulates an
-implementation of David Talkin's Robust Algorithm for Pitch Tracking
-(RAPT).
+This module encapsulates the rapt function, which runs an implementation of
+David Talkin's Robust Algorithm for Pitch Tracking (RAPT).
 """
 
 from scipy import signal
@@ -23,9 +22,15 @@ def rapt(wavfile_path):
 
     # TODO: pass max F0 from alg param list to calc downsampling rate method
     downsampling_rate = calculate_downsampling_rate(sample_rate, 500)
-    sample_rate_ratio = float(downsampling_rate) / float(sample_rate)
-    downsampled_audio = signal.resample(original_audio,
-                                        len(original_audio) * sample_rate_ratio)
+    downsampled_audio = downsample_audio(original_audio,
+                                         sample_rate, downsampling_rate)
+
+    # Next we need to run NCCF on the downsampled audio
+
+    # Based on the output of the 1st pass, examine the notable maxima
+
+    # Dynamic programming - determine voicing state at each period candidate
+
     return downsampled_audio
 
 
@@ -49,3 +54,14 @@ def calculate_downsampling_rate(initial_sampling_rate, maximum_f0):
                          'division by zero. No 1st pass of downsampled '
                          'audio should occur.')
     return round(aReturn)
+
+
+def downsample_audio(original_audio, sample_rate, downsampling_rate):
+    """
+    Given the original audio sample/rate and a desired downsampling rate,
+    returns a downsampled version of the audio input.
+    """
+    sample_rate_ratio = float(downsampling_rate) / float(sample_rate)
+    downsampled_audio = signal.resample(original_audio,
+                                        len(original_audio) * sample_rate_ratio)
+    return downsampled_audio
