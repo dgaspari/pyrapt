@@ -8,6 +8,27 @@ from scipy import signal
 from scipy.io import wavfile
 
 
+def rapt(wavfile_path):
+    """
+    F0 estimator that uses the RAPT algorithm to determine vocal
+    pitch in an audio sample.
+    """
+    # TODO: Flesh out docstring, describe args. Add an array for alg inputs
+    # TODO: try/catch around wavfile.read, handle file read problems
+    sample_rate, original_audio = wavfile.read(wavfile_path)
+
+    # TODO: Continue to just convert to mono?
+    if len(original_audio.shape) > 1:
+        original_audio = original_audio[:, 0]/2 + original_audio[:, 1]/2
+
+    # TODO: pass max F0 from alg param list to calc downsampling rate method
+    downsampling_rate = calculate_downsampling_rate(sample_rate, 500)
+    sample_rate_ratio = float(downsampling_rate) / float(sample_rate)
+    downsampled_audio = signal.resample(original_audio,
+                                        len(original_audio) * sample_rate_ratio)
+    return downsampled_audio
+
+
 def calculate_downsampling_rate(initial_sampling_rate, maximum_f0):
     """
     Determines downsampling rate to apply to the audio input passed for
@@ -24,27 +45,7 @@ def calculate_downsampling_rate(initial_sampling_rate, maximum_f0):
         aReturn = (initial_sampling_rate /
                    round(initial_sampling_rate / (4 * maximum_f0)))
     except ZeroDivisionError:
-        raise ValueError('Ratio of sampling rate and max f_0 leads to '
+        raise ValueError('Ratio of sampling rate and max F0 leads to '
                          'division by zero. No 1st pass of downsampled '
                          'audio should occur.')
     return round(aReturn)
-
-
-def _demo(wavfile_path):
-    """
-    Rough demo of the RAPT alg process - downsampling input audio,
-    cross-correlation first pass on downsampled audio, then second pass
-    on the original audio. Followed by the dynamic programming steps.
-    The logic here will be refined in the rest of class.
-    """
-    # get audio input data using scipy.io wav reader:
-    original_audio = wavfile.read(wavfile_path)
-    downsampling_rate = calculate_downsampling_rate(original_audio[0], 500)
-    # 2nd arg could be constant configurable - max Fzero
-    # downsampled_audio =
-    # signal.resample(original_audio[1], int(downsampling_rate))
-    # decimate or resample options available here:
-    downsampled_audio = signal.decimate(
-        original_audio[1], int(downsampling_rate))
-    # TODO: need details on lowpass fir filter
-    return downsampled_audio

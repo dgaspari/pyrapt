@@ -3,6 +3,16 @@ pytest-cov==1.8.1
 numpy==1.9.2
 scipy=0.15.1
 
+#TODO: determine if i need:
+#six
+#pytz
+#nose
+#mock
+#py
+#cov-core
+#coverage
+#pyparsing
+
 # Some notes on setting up scipy (for when I try to set this up in Travis CI):
 # Per my readme, need fortran compiler, plus some underlying packages available.
 # On my ubuntu box I ended up doing these apt-get calls:
