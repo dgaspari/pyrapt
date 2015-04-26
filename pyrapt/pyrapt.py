@@ -1,8 +1,9 @@
 """
-This module encapsulates the rapt function, which runs an implementation of
-David Talkin's Robust Algorithm for Pitch Tracking (RAPT).
+This module encapsulates the rapt function, which runs an implementation
+of David Talkin's Robust Algorithm for Pitch Tracking (RAPT).
 """
 
+import numpy
 from scipy import signal
 from scipy.io import wavfile
 
@@ -26,12 +27,15 @@ def rapt(wavfile_path):
                                          sample_rate, downsampling_rate)
 
     # Next we need to run NCCF on the downsampled audio
+    # TODO: pass other input args into nccf call
+    first_pass_results = nccf_first_pass(downsampled_audio,
+                                         downsampling_rate, sample_rate)
 
     # Based on the output of the 1st pass, examine the notable maxima
 
     # Dynamic programming - determine voicing state at each period candidate
 
-    return downsampled_audio
+    return first_pass_results
 
 
 def calculate_downsampling_rate(initial_sampling_rate, maximum_f0):
@@ -53,15 +57,48 @@ def calculate_downsampling_rate(initial_sampling_rate, maximum_f0):
         raise ValueError('Ratio of sampling rate and max F0 leads to '
                          'division by zero. No 1st pass of downsampled '
                          'audio should occur.')
-    return round(aReturn)
+    return int(aReturn)
 
 
 def downsample_audio(original_audio, sample_rate, downsampling_rate):
     """
-    Given the original audio sample/rate and a desired downsampling rate,
-    returns a downsampled version of the audio input.
+    Given the original audio sample/rate and a desired downsampling
+    rate, returns a downsampled version of the audio input.
     """
     sample_rate_ratio = float(downsampling_rate) / float(sample_rate)
     downsampled_audio = signal.resample(original_audio,
                                         len(original_audio) * sample_rate_ratio)
     return downsampled_audio
+
+
+def nccf_first_pass(downsampled_audio, downsampling_rate, sample_rate):
+    """
+    This function is used by the RAPT algorithm to scan the entirety
+    of the downsampled audio sample for potential period candidates
+    using the nccf function
+    """
+    # TODO: Make these optional params:
+    maximum_allowed_freq = 500
+    minimum_allowed_freq = 50
+    frame_step_size = 0.01
+
+    # starting value for "k" in NCCF equation
+    shortest_lag_per_frame = downsampling_rate / maximum_allowed_freq
+
+    # Value of "K" in NCCF equation
+    longest_lag_per_frame = downsampling_rate / minimum_allowed_freq
+
+    # Value of "z" in NCCF equation
+    samples_per_frame = frame_step_size * downsampling_rate
+
+    # Value of "M" in NCCF equation
+    max_frame_count = int(len(downsampled_audio) / samples_per_frame)
+
+    lag_range = longest_lag_per_frame - shortest_lag_per_frame
+
+    candidates = numpy.zeros((max_frame_count, lag_range))
+    for i in xrange(0, max_frame_count):
+        for k in xrange(0, lag_range):
+            candidates[i][k] = 1
+
+    return candidates
