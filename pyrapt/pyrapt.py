@@ -16,7 +16,7 @@ def rapt(wavfile_path):
     # TODO: Flesh out docstring, describe args. Add an array for alg inputs
     # TODO: try/catch around wavfile.read, handle file read problems
     # TODO: validation of input!
-    sample_rate, original_audio = wavfile.read(wavfile_path)
+    sample_rate, original_audio = _extract_audio_data(wavfile_path)
 
     # TODO: Continue to just convert to mono?
     if len(original_audio.shape) > 1:
@@ -29,6 +29,15 @@ def rapt(wavfile_path):
 
     # return output of nccf for now
     return period_candidates
+
+
+def _extract_audio_data(wavfile_path):
+    """
+    Internal method that handles obtaining the audio sample data and
+    sampling rate using scipy.io library's wavfile reader
+    """
+    sample_rate, original_audio = wavfile.read(wavfile_path)
+    return sample_rate, original_audio
 
 
 def run_nccf(audio_input, sample_rate):
