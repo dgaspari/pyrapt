@@ -10,20 +10,14 @@ from scipy.io import wavfile
 
 def rapt(wavfile_path):
     """
-    F0 estimator that uses the RAPT algorithm to determine vocal
-    pitch in an audio sample.
+    F0 estimator inspired by RAPT algorithm to determine vocal
+    pitch of an audio sample.
     """
     # TODO: Flesh out docstring, describe args. Add an array for alg inputs
-    # TODO: try/catch around wavfile.read, handle file read problems
-    # TODO: validation of input!
-    sample_rate, original_audio = _extract_audio_data(wavfile_path)
-
-    # TODO: Continue to just convert to mono?
-    if len(original_audio.shape) > 1:
-        original_audio = original_audio[:, 0]/2 + original_audio[:, 1]/2
+    sample_rate, audio_sample = _get_sample_data(wavfile_path)
 
     # NCCF (normalized cross correlation function) - identify F0 candidates
-    period_candidates = run_nccf(original_audio, sample_rate),
+    period_candidates = _run_nccf(audio_sample, sample_rate),
 
     # Dynamic programming - determine voicing state at each period candidate
 
@@ -31,21 +25,19 @@ def rapt(wavfile_path):
     return period_candidates
 
 
-def _extract_audio_data(wavfile_path):
-    """
-    Internal method that handles obtaining the audio sample data and
-    sampling rate using scipy.io library's wavfile reader
-    """
-    sample_rate, original_audio = wavfile.read(wavfile_path)
-    return sample_rate, original_audio
+def _get_sample_data(wavfile_path):
+    # Read wavfile and convert to mono
+    # TODO: Continue to convert to mono?
+
+    sample_rate, audio_sample = wavfile.read(wavfile_path)
+
+    if len(audio_sample.shape) > 1:
+        audio_sample = audio_sample[:, 0]/2 + audio_sample[:, 1]/2
+
+    return sample_rate, audio_sample
 
 
-def run_nccf(audio_input, sample_rate):
-    """
-    This function is specified by the RAPT algorithm to scan the
-    entirety of the downsampled audio sample for potential period
-    candidates using the nccf function
-    """
+def _run_nccf(audio_input, sample_rate):
     # TODO: Make these optional params:
     maximum_allowed_freq = 500
     minimum_allowed_freq = 50

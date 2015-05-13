@@ -1,5 +1,6 @@
 pytest==2.6.4
 pytest-cov==1.8.1
+mock==1.0.1
 numpy==1.9.2
 scipy=0.15.1
 

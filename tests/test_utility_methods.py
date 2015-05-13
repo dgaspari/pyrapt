@@ -2,14 +2,13 @@
 Unit tests for utility methods
 """
 from unittest import TestCase
-import numpy
+# import numpy
 
 from pyrapt import pyrapt
 
 
 class TestUtilityMethods(TestCase):
 
-    def test_placeholder(self):
-        empty_input = numpy.zeros(3600)
-        results = pyrapt.run_nccf(empty_input, 44100)
-        assert results.shape == (8, 794)
+    def test_null_input_error(self):
+        with self.assertRaises(IOError):
+            pyrapt.rapt('')
