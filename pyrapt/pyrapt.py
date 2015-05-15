@@ -27,12 +27,13 @@ def rapt(wavfile_path):
 
 def _get_sample_data(wavfile_path):
     # Read wavfile and convert to mono
-    # TODO: Continue to convert to mono?
-
     sample_rate, audio_sample = wavfile.read(wavfile_path)
 
+    # TODO: investigate whether this type of conversion to mono is suitable:
+    # TODO: unit tests for this:
     if len(audio_sample.shape) > 1:
-        audio_sample = audio_sample[:, 0]/2 + audio_sample[:, 1]/2
+        audio_sample = audio_sample[:, 0]/2.0 + audio_sample[:, 1]/2.0
+        audio_sample = audio_sample.astype(int)
 
     return sample_rate, audio_sample
 
