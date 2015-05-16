@@ -14,9 +14,10 @@ def rapt(wavfile_path):
     pitch of an audio sample.
     """
     # TODO: Flesh out docstring, describe args. Add an array for alg inputs
-    sample_rate, audio_sample = _get_sample_data(wavfile_path)
+    sample_rate, audio_sample = _get_audio_data(wavfile_path)
 
     # NCCF (normalized cross correlation function) - identify F0 candidates
+    # TODO: Determine if we want to preprocess audio before NCCF
     period_candidates = _run_nccf(audio_sample, sample_rate),
 
     # Dynamic programming - determine voicing state at each period candidate
@@ -25,12 +26,11 @@ def rapt(wavfile_path):
     return period_candidates
 
 
-def _get_sample_data(wavfile_path):
+def _get_audio_data(wavfile_path):
     # Read wavfile and convert to mono
     sample_rate, audio_sample = wavfile.read(wavfile_path)
 
     # TODO: investigate whether this type of conversion to mono is suitable:
-    # TODO: unit tests for this:
     if len(audio_sample.shape) > 1:
         audio_sample = audio_sample[:, 0]/2.0 + audio_sample[:, 1]/2.0
         audio_sample = audio_sample.astype(int)
