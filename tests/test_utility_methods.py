@@ -29,3 +29,9 @@ class TestUtilityMethods(TestCase):
         mock_wavfile_read.return_value = 100, mock_sample
         sample_rate, audio_sample = pyrapt._get_audio_data('test.wav')
         self.assertTrue(numpy.array_equal(numpy.array([0, 1, 4]), audio_sample))
+
+    def test_nccf_return_dimensions(self):
+        sample_rate = 1000
+        audio_data = numpy.zeros(1000)
+        candidates = pyrapt._run_nccf(audio_data, sample_rate)
+        self.assertEqual((100, 18), candidates.shape)

@@ -39,11 +39,22 @@ def _get_audio_data(wavfile_path):
 
 
 def _run_nccf(audio_input, sample_rate):
-    # TODO: Make these optional params:
+    # Runs normalized cross correlation function (NCCF) on entire audio sample,
+    # outputting a set of potential F0 candidates that could be used to
+    # determine the pitch at each given frame of the audio sample.
+
+    # TODO: Make these optional params that default to below values:
+    # Value of "F0_max" in NCCF equation:
     maximum_allowed_freq = 500
+    # Value of "F0_min" in NCCF equation:
     minimum_allowed_freq = 50
+    # Value of "t" in NCCF equation:
     frame_step_size = 0.01
+    # Value of "w" in NCCF equation:
     # correlation_window_size = 0.0075
+
+    # Value of "n" in NCCF equation:
+    # samples_correlated_per_lag = int(correlation_window_size * sample_rate)
 
     # starting value for "k" in NCCF equation
     shortest_lag_per_frame = int(sample_rate / maximum_allowed_freq)
@@ -57,13 +68,9 @@ def _run_nccf(audio_input, sample_rate):
     # Value of "M" in NCCF equation
     max_frame_count = int(len(audio_input) / samples_per_frame)
 
-    # Value of "n" in NCCF equation
-    # num_samples_per_lag = int(correlation_window_size * sample_rate)
-
     lag_range = longest_lag_per_frame - shortest_lag_per_frame
 
     # TODO: Re-read discussion of using double-precision arithmetic in 3.3
-    # TODO: adjust formula based on variations in 3.3
     candidates = numpy.zeros((max_frame_count, lag_range))
     for i in xrange(0, max_frame_count):
         for k in xrange(0, lag_range):
