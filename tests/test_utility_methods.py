@@ -26,9 +26,10 @@ class TestUtilityMethods(TestCase):
     @patch('scipy.io.wavfile.read')
     def test_read_data_with_mono_conversion(self, mock_wavfile_read):
         mock_sample = numpy.array([[1, -1], [2, 1], [3, 5]])
-        mock_wavfile_read.return_value = 100, mock_sample
+        mock_wavfile_read.return_value = 200, mock_sample
         sample_rate, audio_sample = pyrapt._get_audio_data('test.wav')
         self.assertTrue(numpy.array_equal(numpy.array([0, 1, 4]), audio_sample))
+        self.assertTrue(200, sample_rate)
 
     def test_nccf_return_dimensions(self):
         sample_rate = 1000
