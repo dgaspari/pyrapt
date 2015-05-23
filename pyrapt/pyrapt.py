@@ -74,32 +74,19 @@ def _run_nccf(audio_input, sample_rate):
     candidates = numpy.zeros((max_frame_count, lag_range))
     for i in xrange(0, max_frame_count):
         for k in xrange(0, lag_range):
-            samples = _get_samples_to_correlate(audio_input, i,
-                                                samples_per_frame,
-                                                samples_correlated_per_lag,
-                                                longest_lag_per_frame)
-            # summation of samples within frame * said sample + lag:
-            # value of "m" in NCCF equation:
-            # start_sample = i * samples_per_frame
-            # sample_sum = 0
-            # squared_sum = 0
-            # squared_sum_with_lag = 0
-            candidates[i][k] = samples
-            # TODO: debug through here, figure out array index issues
-            # for j in xrange(start_sample,
-            #                 start_sample + num_samples_per_lag - 1):
-            #   sample_sum += (downsampled_audio[j] * downsampled_audio[j + k])
-            #     squared_sum += downsampled_audio[j] ** 2
-            #     squared_sum_with_lag += downsampled_audio[j + k] ** 2
-            # divided by sqrt e_m * e_m + lag
-            # candidates[i][k] = (sample_sum /
-            #                     math.sqrt(squared_sum * squared_sum_with_lag))
+            samples = 0
+            for j in xrange(0, samples_correlated_per_lag - 1):
+                samples += _get_samples_to_correlate(audio_input, i, j,
+                                                     samples_per_frame,
+                                                     samples_correlated_per_lag,
+                                                     longest_lag_per_frame)
+                candidates[i][k] = samples
 
     return candidates
 
 
-def _get_samples_to_correlate(audio_input, current_frame, samples_per_frame,
-                              samples_correlated_per_lag,
+def _get_samples_to_correlate(audio_input, frame_index, correlation_index,
+                              samples_per_frame, samples_correlated_per_lag,
                               longest_lag_per_frame):
     # For a given frame, take non-zero mean of the samples in that frame, and
     # subtract the local mean in the current reference window
@@ -107,14 +94,16 @@ def _get_samples_to_correlate(audio_input, current_frame, samples_per_frame,
     # Value of "s_i,j" in NCCF queation:
     returned_signal = 0
 
-    # Value of "m" in NCCF equation (m = iz)
-    start_sample = current_frame * samples_per_frame
-    # value of "n + K - 1"
-    end_sample = samples_correlated_per_lag + longest_lag_per_frame - 1
+    # Value of "m" in NCCF equation (m = iz) + j
+    frame_start = frame_index * samples_per_frame
+    # Value of "m+j" in NCCF equation
+    start_sample = frame_start + correlation_index
+    # end of the frame
+    end_sample = start_sample + samples_per_frame
     # value of "x_m+j" in NCCF equation
     mean_for_frame = numpy.mean(audio_input[start_sample:end_sample])
     # value of "m + n - 1"
-    last_sample_in_frame = start_sample + samples_correlated_per_lag - 1
+    last_sample_in_frame = frame_start + samples_correlated_per_lag - 1
     sum_frame_samples = sum(audio_input[start_sample:last_sample_in_frame])
     # value of "u_i" in NCCF equation
     mean_for_window = (1 / samples_correlated_per_lag) * sum_frame_samples

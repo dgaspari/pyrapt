@@ -41,7 +41,9 @@ class TestUtilityMethods(TestCase):
         # sample_rate = 1000
         audio_data = numpy.ones(1000)
         audio_data2 = numpy.zeros(1000)
-        signal = pyrapt._get_samples_to_correlate(audio_data, 0, 10, 8, 20)
+        signal = pyrapt._get_samples_to_correlate(audio_data, 0, 0, 10, 8, 20)
         self.assertEqual(1.0, signal)
-        signal = pyrapt._get_samples_to_correlate(audio_data2, 0, 10, 8, 20)
+        signal = pyrapt._get_samples_to_correlate(audio_data2, 0, 0, 10, 8, 20)
         self.assertEqual(0, 0, signal)
+        signal = pyrapt._get_samples_to_correlate(audio_data, 5, 0, 10, 8, 20)
+        self.assertEqual(1.0, signal)
