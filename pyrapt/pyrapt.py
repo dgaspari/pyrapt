@@ -75,17 +75,19 @@ def _run_nccf(audio_input, sample_rate):
     for i in xrange(0, max_frame_count):
         for k in xrange(0, lag_range):
             samples = 0
-            for j in xrange(0, samples_correlated_per_lag - 1):
-                correlated_samples = _get_samples(audio_input, i, j,
-                                                  samples_per_frame,
-                                                  samples_correlated_per_lag,
-                                                  longest_lag_per_frame)
-                samples_for_lag = _get_samples(audio_input, i, j + k,
-                                               samples_per_frame,
-                                               samples_correlated_per_lag,
-                                               longest_lag_per_frame)
-                samples += correlated_samples * samples_for_lag
-                candidates[i][k] = samples
+            # for j in xrange(0, samples_correlated_per_lag - 1):
+            #    samples = 0
+            #    print(j)
+            #    correlated_samples = _get_samples(audio_input, i, j,
+            #                                      samples_per_frame,
+            #                                      samples_correlated_per_lag,
+            #                                      longest_lag_per_frame)
+            #     samples_for_lag = _get_samples(audio_input, i, j + k,
+            #                                   samples_per_frame,
+            #                                   samples_correlated_per_lag,
+            #                                   longest_lag_per_frame)
+            #     samples += (correlated_samples * samples_for_lag)
+            candidates[i][k] = samples
 
     return candidates
 
