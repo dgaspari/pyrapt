@@ -5,6 +5,7 @@ based on David Talkin's Robust Algorithm for Pitch Tracking (RAPT).
 
 # import math
 import numpy
+from scipy import signal
 from scipy.io import wavfile
 
 
@@ -16,9 +17,15 @@ def rapt(wavfile_path):
     # TODO: Flesh out docstring, describe args. Add an array for alg inputs
     sample_rate, audio_sample = _get_audio_data(wavfile_path)
 
+    # TODO: pass max F0 from alg param list to calc downsampling rate method
+    downsampling_rate = _calculate_downsampling_rate(sample_rate, 500)
+    downsampled_audio = _downsample_audio(audio_sample,
+                                          sample_rate, downsampling_rate)
+
     # NCCF (normalized cross correlation function) - identify F0 candidates
     # TODO: Determine if we want to preprocess audio before NCCF
-    period_candidates = _run_nccf(audio_sample, sample_rate),
+    period_candidates = _run_nccf(downsampled_audio, downsampling_rate)
+    # period_candidates = _run_nccf(audio_sample, sample_rate)
 
     # Dynamic programming - determine voicing state at each period candidate
 
@@ -36,6 +43,39 @@ def _get_audio_data(wavfile_path):
         audio_sample = audio_sample.astype(int)
 
     return sample_rate, audio_sample
+
+
+def _downsample_audio(original_audio, sample_rate, downsampling_rate):
+    """
+    Given the original audio sample/rate and a desired downsampling
+    rate, returns a downsampled version of the audio input.
+    """
+    sample_rate_ratio = float(downsampling_rate) / float(sample_rate)
+    downsampled_audio = signal.resample(original_audio,
+                                        len(original_audio) * sample_rate_ratio)
+    return downsampled_audio
+
+
+def _calculate_downsampling_rate(initial_sampling_rate, maximum_f0):
+    """
+    Determines downsampling rate to apply to the audio input passed for
+    RAPT processing
+    """
+
+    """
+    NOTE: Using Python 2.7 so division is integer division by default
+    This would behave different in Python 3+. That said, keeping the
+    round() around the denominator of this formula as it is specified in
+    the formula in David Talkin's paper:
+    """
+    try:
+        aReturn = (initial_sampling_rate /
+                   round(initial_sampling_rate / (4 * maximum_f0)))
+    except ZeroDivisionError:
+        raise ValueError('Ratio of sampling rate and max F0 leads to'
+                         'division by zero. No 1st pass of downsampled '
+                         'audio should occur.')
+    return int(aReturn)
 
 
 def _run_nccf(audio_input, sample_rate):
@@ -75,23 +115,22 @@ def _run_nccf(audio_input, sample_rate):
     for i in xrange(0, max_frame_count):
         for k in xrange(0, lag_range):
             samples = 0
-            # for j in xrange(0, samples_correlated_per_lag - 1):
-            #    samples = 0
-            #    print(j)
-            #    correlated_samples = _get_samples(audio_input, i, j,
-            #                                      samples_per_frame,
-            #                                      samples_correlated_per_lag,
-            #                                      longest_lag_per_frame)
-            #     samples_for_lag = _get_samples(audio_input, i, j + k,
-            #                                   samples_per_frame,
-            #                                   samples_correlated_per_lag,
-            #                                   longest_lag_per_frame)
-            #     samples += (correlated_samples * samples_for_lag)
+            for j in xrange(0, samples_correlated_per_lag - 1):
+                correlated_samples = _get_samples(audio_input, i, j,
+                                                  samples_per_frame,
+                                                  samples_correlated_per_lag,
+                                                  longest_lag_per_frame)
+                samples_for_lag = _get_samples(audio_input, i, j + k,
+                                               samples_per_frame,
+                                               samples_correlated_per_lag,
+                                               longest_lag_per_frame)
+                samples += (correlated_samples * samples_for_lag)
             candidates[i][k] = samples
 
     return candidates
 
 
+# TODO: Replace numpy.mean with a local mean function to see if that is prob
 def _get_samples(audio_input, frame_index, correlation_index, samples_per_frame,
                  samples_correlated_per_lag, longest_lag_per_frame):
     # For a given frame, take non-zero mean of the samples in that frame, and
