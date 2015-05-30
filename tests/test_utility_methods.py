@@ -31,6 +31,13 @@ class TestUtilityMethods(TestCase):
         self.assertTrue(numpy.array_equal(numpy.array([0, 1, 4]), audio_sample))
         self.assertTrue(200, sample_rate)
 
+    def test_basic_downsampling_calc(self):
+        assert pyrapt._calculate_downsampling_rate(48000, 500) == 2000
+
+    def test_divide_by_zero_throws_value_error(self):
+        with self.assertRaises(ValueError):
+            pyrapt._calculate_downsampling_rate(500, 500)
+
     def test_nccf_return_dimensions(self):
         sample_rate = 1000
         audio_data = numpy.zeros(1000)

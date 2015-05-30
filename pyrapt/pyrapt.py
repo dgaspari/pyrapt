@@ -64,7 +64,7 @@ def _calculate_downsampling_rate(initial_sampling_rate, maximum_f0):
 
     """
     NOTE: Using Python 2.7 so division is integer division by default
-    This would behave different in Python 3+. That said, keeping the
+    Different default behavior in in Python 3+. That said, keeping the
     round() around the denominator of this formula as it is specified in
     the formula in David Talkin's paper:
     """
