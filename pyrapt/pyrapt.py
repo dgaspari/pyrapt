@@ -50,7 +50,12 @@ def _downsample_audio(original_audio, sample_rate, downsampling_rate):
     Given the original audio sample/rate and a desired downsampling
     rate, returns a downsampled version of the audio input.
     """
-    sample_rate_ratio = float(downsampling_rate) / float(sample_rate)
+    try:
+        sample_rate_ratio = float(downsampling_rate) / float(sample_rate)
+    except ZeroDivisionError:
+        raise ValueError('Input audio sampling rate is zero. Cannot determine '
+                         'downsampling ratio.')
+    # resample audio so it only uses a fraction of the original # of samples:
     downsampled_audio = signal.resample(original_audio,
                                         len(original_audio) * sample_rate_ratio)
     return downsampled_audio
