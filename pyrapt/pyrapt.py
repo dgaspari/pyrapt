@@ -24,13 +24,13 @@ def rapt(wavfile_path):
 
     # NCCF (normalized cross correlation function) - identify F0 candidates
     # TODO: Determine if we want to preprocess audio before NCCF
-    period_candidates = _first_pass_nccf(downsampled_audio, downsampling_rate)
+    first_pass = _first_pass_nccf(downsampled_audio, downsampling_rate)
     # period_candidates = _second_pass_nccf(audio_sample, sample_rate)
 
     # Dynamic programming - determine voicing state at each period candidate
 
     # return output of nccf for now
-    return period_candidates
+    return first_pass
 
 
 def _get_audio_data(wavfile_path):
@@ -84,7 +84,7 @@ def _calculate_downsampling_rate(initial_sampling_rate, maximum_f0):
 
 
 def _first_pass_nccf(audio_input, sample_rate):
-    # Runs normalized cross correlation function (NCCF) on entire audio sample,
+    # Runs normalized cross correlation function (NCCF) on downsampled audio,
     # outputting a set of potential F0 candidates that could be used to
     # determine the pitch at each given frame of the audio sample.
 
