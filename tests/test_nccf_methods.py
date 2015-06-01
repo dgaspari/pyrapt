@@ -12,6 +12,7 @@ from pyrapt import pyrapt
 class TestNccfMethods(TestCase):
 
     def test_nccf_return_dimensions(self):
+        # TODO: This is with default params. Do it with passed in ones as well
         sample_rate = 1000
         audio_data = numpy.zeros(1000)
         candidates = pyrapt._first_pass_nccf(audio_data, sample_rate)

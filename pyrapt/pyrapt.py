@@ -3,7 +3,7 @@ This module encapsulates the rapt function, which runs a pitch tracker
 based on David Talkin's Robust Algorithm for Pitch Tracking (RAPT).
 """
 
-# import math
+import math
 import numpy
 from scipy import signal
 from scipy.io import wavfile
@@ -82,6 +82,9 @@ def _calculate_downsampling_rate(initial_sampling_rate, maximum_f0):
                          'audio should occur.')
     return int(aReturn)
 
+# NCCF Functionality:
+# TODO: Consider moving nccf functions into a separate module / file?
+
 
 def _first_pass_nccf(audio_input, sample_rate):
     # Runs normalized cross correlation function (NCCF) on downsampled audio,
@@ -102,6 +105,7 @@ def _first_pass_nccf(audio_input, sample_rate):
     samples_correlated_per_lag = int(correlation_window_size * sample_rate)
 
     # starting value for "k" in NCCF equation
+    # NOTE: THIS IS ONLY MEANT FOR FIRST PASS, OTHERWISE k STARTS AT ZERO
     shortest_lag_per_frame = int(sample_rate / maximum_allowed_freq)
 
     # Value of "K" in NCCF equation
@@ -119,18 +123,28 @@ def _first_pass_nccf(audio_input, sample_rate):
     candidates = numpy.zeros((max_frame_count, lag_range))
     for i in xrange(0, max_frame_count):
         for k in xrange(0, lag_range):
+            current_lag = k + shortest_lag_per_frame
             samples = 0
+            denominator = _get_nccf_denominator_val(audio_input, i, 0,
+                                                    samples_per_frame,
+                                                    samples_correlated_per_lag,
+                                                    longest_lag_per_frame)
+            denominator *= _get_nccf_denominator_val(audio_input, i,
+                                                     current_lag,
+                                                     samples_per_frame,
+                                                     samples_correlated_per_lag,
+                                                     longest_lag_per_frame)
             for j in xrange(0, samples_correlated_per_lag - 1):
                 correlated_samples = _get_samples(audio_input, i, j,
                                                   samples_per_frame,
                                                   samples_correlated_per_lag,
                                                   longest_lag_per_frame)
-                samples_for_lag = _get_samples(audio_input, i, j + k,
+                samples_for_lag = _get_samples(audio_input, i, j + current_lag,
                                                samples_per_frame,
                                                samples_correlated_per_lag,
                                                longest_lag_per_frame)
-                samples += (correlated_samples * samples_for_lag)
-            candidates[i][k] = samples
+                samples += correlated_samples * samples_for_lag
+            candidates[i][k] = samples / denominator
 
     return candidates
 
@@ -161,3 +175,16 @@ def _get_samples(audio_input, frame_index, correlation_index, samples_per_frame,
     returned_signal = mean_for_frame - mean_for_window
 
     return returned_signal
+
+
+def _get_nccf_denominator_val(audio_input, frame_index, starting_val,
+                              samples_per_frame, samples_correlated_per_lag,
+                              longest_lag_per_frame):
+    total_sum = 0.0
+    for l in xrange(starting_val,
+                    starting_val + samples_correlated_per_lag - 1):
+        samples = _get_samples(audio_input, frame_index, l, samples_per_frame,
+                               samples_correlated_per_lag,
+                               longest_lag_per_frame)
+        total_sum += math.pow(2, samples)
+    return total_sum
