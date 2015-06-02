@@ -144,7 +144,7 @@ def _first_pass_nccf(audio_input, sample_rate):
                                                samples_correlated_per_lag,
                                                longest_lag_per_frame)
                 samples += correlated_samples * samples_for_lag
-            candidates[i][k] = samples / denominator
+            candidates[i][k] = float(samples) / float(denominator)
 
     return candidates
 
@@ -170,7 +170,8 @@ def _get_samples(audio_input, frame_index, correlation_index, samples_per_frame,
     last_sample_in_frame = frame_start + samples_correlated_per_lag - 1
     sum_frame_samples = sum(audio_input[start_sample:last_sample_in_frame])
     # value of "u_i" in NCCF equation
-    mean_for_window = (1 / samples_correlated_per_lag) * sum_frame_samples
+    mean_for_window = ((float(1.0) / float(samples_correlated_per_lag)) *
+                       sum_frame_samples)
 
     returned_signal = mean_for_frame - mean_for_window
 
