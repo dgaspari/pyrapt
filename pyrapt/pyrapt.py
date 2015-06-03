@@ -8,6 +8,8 @@ import numpy
 from scipy import signal
 from scipy.io import wavfile
 
+# import pdb
+
 
 def rapt(wavfile_path):
     """
@@ -114,8 +116,8 @@ def _first_pass_nccf(audio_input, sample_rate):
     # Value of "z" in NCCF equation
     samples_per_frame = int(frame_step_size * sample_rate)
 
-    # Value of "M" in NCCF equation
-    max_frame_count = int(len(audio_input) / samples_per_frame)
+    # Value of "M-1" in NCCF equation
+    max_frame_count = (int(len(audio_input) / samples_per_frame) - 1)
 
     lag_range = longest_lag_per_frame - shortest_lag_per_frame
 
@@ -124,6 +126,7 @@ def _first_pass_nccf(audio_input, sample_rate):
     for i in xrange(0, max_frame_count):
         for k in xrange(0, lag_range):
             current_lag = k + shortest_lag_per_frame
+
             samples = 0
             denominator = _get_nccf_denominator_val(audio_input, i, 0,
                                                     samples_per_frame,
@@ -135,45 +138,52 @@ def _first_pass_nccf(audio_input, sample_rate):
                                                      samples_correlated_per_lag,
                                                      longest_lag_per_frame)
             for j in xrange(0, samples_correlated_per_lag - 1):
-                correlated_samples = _get_samples(audio_input, i, j,
-                                                  samples_per_frame,
-                                                  samples_correlated_per_lag,
-                                                  longest_lag_per_frame)
-                samples_for_lag = _get_samples(audio_input, i, j + current_lag,
-                                               samples_per_frame,
-                                               samples_correlated_per_lag,
-                                               longest_lag_per_frame)
+                correlated_samples = _get_sample(audio_input, i, j,
+                                                 samples_per_frame,
+                                                 samples_correlated_per_lag,
+                                                 longest_lag_per_frame)
+                samples_for_lag = _get_sample(audio_input, i, j + current_lag,
+                                              samples_per_frame,
+                                              samples_correlated_per_lag,
+                                              longest_lag_per_frame)
                 samples += correlated_samples * samples_for_lag
             candidates[i][k] = float(samples) / float(denominator)
 
     return candidates
 
 
-# TODO: Replace numpy.mean with a local mean function to see if that is prob
-def _get_samples(audio_input, frame_index, correlation_index, samples_per_frame,
-                 samples_correlated_per_lag, longest_lag_per_frame):
-    # For a given frame, take non-zero mean of the samples in that frame, and
-    # subtract the local mean in the current reference window
+# TODO: at some point start_sample is FURTHER than last_sample_in_frame
+# (when calculating denominator). Why is that? we use m + n - 1 for
+# last sample in frame but that seems off... so just to be clear, when
+# i=165 and k=29, in _get_samples for denominator, we invoke this method w:
+# correlation_index of 33, samples_per_Frame = 20, samples_per_lag = 15, K=40
+# frame_start: 3300
+# start_sample: 3333
+# end_sample: 3353
+# last_sample_in_frame: 3314 <<< heres the problem
+# the mean_for_frame val seems fine, but sum_frame_samples fails because we
+# try and calc sum of input from 3333 to 3314
 
-    # Value of "s_i,j" in NCCF queation:
+# TODO: Figure out array out of bounds error
+def _get_sample(audio_input, frame_index, correlation_index, samples_per_frame,
+                samples_correlated_per_lag, longest_lag_per_frame):
     returned_signal = 0
-
-    # Value of "m" in NCCF equation (m = iz) + j
+    # value of "m" in NCCF equation (m=iz)
     frame_start = frame_index * samples_per_frame
-    # Value of "m+j" in NCCF equation
-    start_sample = frame_start + correlation_index
-    # end of the frame
-    end_sample = start_sample + samples_per_frame
+    # value of "m+j" in NCCF equation
+    current_sample_index = frame_start + correlation_index
+
     # value of "x_m+j" in NCCF equation
-    mean_for_frame = numpy.mean(audio_input[start_sample:end_sample])
+    current_sample = audio_input[current_sample_index]
     # value of "m + n - 1"
     last_sample_in_frame = frame_start + samples_correlated_per_lag - 1
-    sum_frame_samples = sum(audio_input[start_sample:last_sample_in_frame])
+    # summation of samples from "m" to "m+n-1"
+    sum_frame_samples = sum(audio_input[frame_start:last_sample_in_frame])
     # value of "u_i" in NCCF equation
     mean_for_window = ((float(1.0) / float(samples_correlated_per_lag)) *
                        sum_frame_samples)
 
-    returned_signal = mean_for_frame - mean_for_window
+    returned_signal = current_sample - mean_for_window
 
     return returned_signal
 
@@ -184,8 +194,8 @@ def _get_nccf_denominator_val(audio_input, frame_index, starting_val,
     total_sum = 0.0
     for l in xrange(starting_val,
                     starting_val + samples_correlated_per_lag - 1):
-        samples = _get_samples(audio_input, frame_index, l, samples_per_frame,
-                               samples_correlated_per_lag,
-                               longest_lag_per_frame)
+        samples = _get_sample(audio_input, frame_index, l, samples_per_frame,
+                              samples_correlated_per_lag,
+                              longest_lag_per_frame)
         total_sum += math.pow(2, samples)
     return total_sum
