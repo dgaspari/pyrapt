@@ -8,8 +8,6 @@ import numpy
 from scipy import signal
 from scipy.io import wavfile
 
-# import pdb
-
 
 def rapt(wavfile_path):
     """
@@ -117,9 +115,11 @@ def _first_pass_nccf(audio_input, sample_rate):
     samples_per_frame = int(frame_step_size * sample_rate)
 
     # Value of "M-1" in NCCF equation
-    max_frame_count = (int(len(audio_input) / samples_per_frame) - 1)
+    max_frame_count = (int(float(len(audio_input)) / float(samples_per_frame)
+                       - 1))
 
-    lag_range = longest_lag_per_frame - shortest_lag_per_frame
+    # Difference between "K-1" and starting value of "k"
+    lag_range = (longest_lag_per_frame - 1) - shortest_lag_per_frame
 
     # TODO: Re-read discussion of using double-precision arithmetic in 3.3
     candidates = numpy.zeros((max_frame_count, lag_range))
@@ -127,16 +127,14 @@ def _first_pass_nccf(audio_input, sample_rate):
         for k in xrange(0, lag_range):
             current_lag = k + shortest_lag_per_frame
 
+            # determine if the current lag value causes us to go past the
+            # end of the audio sample - if so - skip and set val to 0
+            if ((current_lag + (samples_correlated_per_lag - 1)
+                    + (i * samples_per_frame)) >= audio_input.size):
+                candidates[i][k] = 0
+                continue
+
             samples = 0
-            denominator = _get_nccf_denominator_val(audio_input, i, 0,
-                                                    samples_per_frame,
-                                                    samples_correlated_per_lag,
-                                                    longest_lag_per_frame)
-            denominator *= _get_nccf_denominator_val(audio_input, i,
-                                                     current_lag,
-                                                     samples_per_frame,
-                                                     samples_correlated_per_lag,
-                                                     longest_lag_per_frame)
             for j in xrange(0, samples_correlated_per_lag - 1):
                 correlated_samples = _get_sample(audio_input, i, j,
                                                  samples_per_frame,
@@ -147,6 +145,18 @@ def _first_pass_nccf(audio_input, sample_rate):
                                               samples_correlated_per_lag,
                                               longest_lag_per_frame)
                 samples += correlated_samples * samples_for_lag
+
+            denominator = _get_nccf_denominator_val(audio_input, i, 0,
+                                                    samples_per_frame,
+                                                    samples_correlated_per_lag,
+                                                    longest_lag_per_frame)
+
+            denominator *= _get_nccf_denominator_val(audio_input, i,
+                                                     current_lag,
+                                                     samples_per_frame,
+                                                     samples_correlated_per_lag,
+                                                     longest_lag_per_frame)
+
             candidates[i][k] = float(samples) / float(denominator)
 
     return candidates
