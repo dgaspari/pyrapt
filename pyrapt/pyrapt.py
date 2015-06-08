@@ -22,9 +22,12 @@ def rapt(wavfile_path):
     downsampled_audio = _downsample_audio(audio_sample,
                                           sample_rate, downsampling_rate)
 
+    first_pass, max_cor = _run_nccf(downsampled_audio, downsampling_rate,
+                                    audio_sample, sample_rate)
+
     # NCCF (normalized cross correlation function) - identify F0 candidates
     # TODO: Determine if we want to preprocess audio before NCCF
-    first_pass, max_cor = _first_pass_nccf(downsampled_audio, downsampling_rate)
+    # first_pass, max_cor = _first_pass_nccf(downsampled_audio, downsampling_ra
     # first_pass is the theta_i,k and max_cor is theta_max from the results
     # period_candidates = _second_pass_nccf(audio_sample, sample_rate,
     #                                        first_pass, max_cor)
@@ -86,6 +89,12 @@ def _calculate_downsampling_rate(initial_sampling_rate, maximum_f0):
 
 # NCCF Functionality:
 # TODO: Consider moving nccf functions into a separate module / file?
+
+
+def _run_nccf(downsampled_audio, downsampling_rate,
+              original_audio, sampling_rate):
+    first_pass, max_cor = _first_pass_nccf(downsampled_audio, downsampling_rate)
+    return first_pass, max_cor
 
 
 def _first_pass_nccf(audio_input, sample_rate):
