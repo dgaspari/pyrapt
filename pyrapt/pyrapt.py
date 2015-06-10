@@ -8,21 +8,27 @@ import numpy
 from scipy import signal
 from scipy.io import wavfile
 
+import raptparams
 
-def rapt(wavfile_path):
+
+def rapt(wavfile_path, **kwargs):
     """
     F0 estimator inspired by RAPT algorithm to determine vocal
     pitch of an audio sample.
     """
+    # Process optional keyword args and build out rapt params
+    params = _setup_rapt_params(kwargs)
+
     # TODO: Flesh out docstring, describe args. Add an array for alg inputs
     sample_rate, audio_sample = _get_audio_data(wavfile_path)
 
     # TODO: pass max F0 from alg param list to calc downsampling rate method
-    downsampling_rate = _calculate_downsampling_rate(sample_rate, 500)
+    downsample_rate = _calculate_downsampling_rate(sample_rate,
+                                                   params.maximum_allowed_freq)
     downsampled_audio = _downsample_audio(audio_sample,
-                                          sample_rate, downsampling_rate)
+                                          sample_rate, downsample_rate)
 
-    first_pass, max_cor = _run_nccf(downsampled_audio, downsampling_rate,
+    first_pass, max_cor = _run_nccf(downsampled_audio, downsample_rate,
                                     audio_sample, sample_rate)
 
     # NCCF (normalized cross correlation function) - identify F0 candidates
@@ -36,6 +42,23 @@ def rapt(wavfile_path):
 
     # return output of nccf for now
     return first_pass, max_cor
+
+
+def _setup_rapt_params(kwargs):
+    # Use optional args for RAPT parameters otherwise use defaults
+    params = raptparams.Raptparams()
+    if kwargs is not None:
+        for key, value in kwargs.iteritems():
+            if key == 'maximum_allowed_freq':
+                params.maximum_allowed_freq = value
+            if key == 'minimum_allowed_freq':
+                params.minimum_allowed_freq = value
+            if key == 'frame_step_size':
+                params.frame_step_size = value
+            if key == 'correlation_window_size':
+                params.correlation_window_size = value
+
+    return params
 
 
 def _get_audio_data(wavfile_path):
@@ -94,6 +117,9 @@ def _calculate_downsampling_rate(initial_sampling_rate, maximum_f0):
 def _run_nccf(downsampled_audio, downsampling_rate,
               original_audio, sampling_rate):
     first_pass, max_cor = _first_pass_nccf(downsampled_audio, downsampling_rate)
+
+    # run second pass
+
     return first_pass, max_cor
 
 
