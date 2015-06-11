@@ -20,16 +20,19 @@ def rapt(wavfile_path, **kwargs):
     params = _setup_rapt_params(kwargs)
 
     # TODO: Flesh out docstring, describe args. Add an array for alg inputs
-    sample_rate, audio_sample = _get_audio_data(wavfile_path)
+    params.sample_rate, params.audio_sample = _get_audio_data(wavfile_path)
 
     # TODO: pass max F0 from alg param list to calc downsampling rate method
-    downsample_rate = _calculate_downsampling_rate(sample_rate,
-                                                   params.maximum_allowed_freq)
-    downsampled_audio = _downsample_audio(audio_sample,
-                                          sample_rate, downsample_rate)
+    params.downsample_rate = _calculate_downsampling_rate(
+        params.sample_rate, params.maximum_allowed_freq)
+    params.downsampled_audio = _downsample_audio(params.audio_sample,
+                                                 params.sample_rate,
+                                                 params.downsample_rate)
 
-    first_pass, max_cor = _run_nccf(downsampled_audio, downsample_rate,
-                                    audio_sample, sample_rate)
+    first_pass, max_cor = _run_nccf(params.downsampled_audio,
+                                    params.downsample_rate,
+                                    params.audio_sample,
+                                    params.sample_rate)
 
     # NCCF (normalized cross correlation function) - identify F0 candidates
     # TODO: Determine if we want to preprocess audio before NCCF

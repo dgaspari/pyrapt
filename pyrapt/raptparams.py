@@ -20,3 +20,9 @@ class Raptparams:
 
         # Value of "w" in NCCF equation:
         self.correlation_window_size = 0.0075
+
+        # Set properties set later during calculations to None:
+        self.sample_rate = None
+        self.audio_sample = None
+        self.downsample_rate = None
+        self.downsampled_audio = None
