@@ -5,7 +5,7 @@ Simple object that stores parameters to the RAPT processing logic.
 
 class Raptparams:
     """
-    Simple object that stores parametrs for use in RAPT equations
+    Simple object that stores const parameters for use in RAPT equations
     """
 
     def __init__(self):
@@ -20,9 +20,3 @@ class Raptparams:
 
         # Value of "w" in NCCF equation:
         self.correlation_window_size = 0.0075
-
-        # Set properties set later during calculations to None:
-        self.sample_rate = None
-        self.audio_sample = None
-        self.downsample_rate = None
-        self.downsampled_audio = None

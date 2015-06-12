@@ -20,19 +20,16 @@ def rapt(wavfile_path, **kwargs):
     params = _setup_rapt_params(kwargs)
 
     # TODO: Flesh out docstring, describe args. Add an array for alg inputs
-    params.sample_rate, params.audio_sample = _get_audio_data(wavfile_path)
+    sample_rate, audio_sample = _get_audio_data(wavfile_path)
 
     # TODO: pass max F0 from alg param list to calc downsampling rate method
-    params.downsample_rate = _calculate_downsampling_rate(
-        params.sample_rate, params.maximum_allowed_freq)
-    params.downsampled_audio = _downsample_audio(params.audio_sample,
-                                                 params.sample_rate,
-                                                 params.downsample_rate)
+    downsample_rate = _calculate_downsampling_rate(sample_rate,
+                                                   params.maximum_allowed_freq)
+    downsampled_audio = _downsample_audio(audio_sample, sample_rate,
+                                          downsample_rate)
 
-    first_pass, max_cor = _run_nccf(params.downsampled_audio,
-                                    params.downsample_rate,
-                                    params.audio_sample,
-                                    params.sample_rate)
+    first_pass, max_cor = _run_nccf(downsampled_audio, downsample_rate,
+                                    audio_sample, sample_rate, params)
 
     # NCCF (normalized cross correlation function) - identify F0 candidates
     # TODO: Determine if we want to preprocess audio before NCCF
@@ -117,29 +114,30 @@ def _calculate_downsampling_rate(initial_sampling_rate, maximum_f0):
 # TODO: Consider moving nccf functions into a separate module / file?
 
 
-def _run_nccf(downsampled_audio, downsampling_rate,
-              original_audio, sampling_rate):
-    first_pass, max_cor = _first_pass_nccf(downsampled_audio, downsampling_rate)
+def _run_nccf(downsampled_audio, downsampling_rate, original_audio,
+              sampling_rate, params):
+    first_pass, max_cor = _first_pass_nccf(downsampled_audio,
+                                           downsampling_rate, params)
 
     # run second pass
 
     return first_pass, max_cor
 
 
-def _first_pass_nccf(audio_input, sample_rate):
+def _first_pass_nccf(audio_input, sample_rate, params):
     # Runs normalized cross correlation function (NCCF) on downsampled audio,
     # outputting a set of potential F0 candidates that could be used to
     # determine the pitch at each given frame of the audio sample.
 
     # TODO: Make these optional params that default to below values:
     # Value of "F0_max" in NCCF equation:
-    maximum_allowed_freq = 500
+    maximum_allowed_freq = params.maximum_allowed_freq
     # Value of "F0_min" in NCCF equation:
-    minimum_allowed_freq = 50
+    minimum_allowed_freq = params.minimum_allowed_freq
     # Value of "t" in NCCF equation:
-    frame_step_size = 0.01
+    frame_step_size = params.frame_step_size
     # Value of "w" in NCCF equation:
-    correlation_window_size = 0.0075
+    correlation_window_size = params.correlation_window_size
 
     # Value of "n" in NCCF equation:
     samples_correlated_per_lag = int(correlation_window_size * sample_rate)
