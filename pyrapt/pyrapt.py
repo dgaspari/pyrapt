@@ -77,6 +77,8 @@ def _downsample_audio(original_audio, sample_rate, downsampling_rate):
     Given the original audio sample/rate and a desired downsampling
     rate, returns a downsampled version of the audio input.
     """
+    # TODO: look into applying low pass filter prior to downsampling, as
+    # suggested in rapt paper.
     try:
         sample_rate_ratio = float(downsampling_rate) / float(sample_rate)
     except ZeroDivisionError:
@@ -129,31 +131,22 @@ def _first_pass_nccf(audio_input, sample_rate, params):
     # outputting a set of potential F0 candidates that could be used to
     # determine the pitch at each given frame of the audio sample.
 
-    # TODO: Make these optional params that default to below values:
-    # Value of "F0_max" in NCCF equation:
-    maximum_allowed_freq = params.maximum_allowed_freq
-    # Value of "F0_min" in NCCF equation:
-    minimum_allowed_freq = params.minimum_allowed_freq
-    # Value of "t" in NCCF equation:
-    frame_step_size = params.frame_step_size
-    # Value of "w" in NCCF equation:
-    correlation_window_size = params.correlation_window_size
-
     # Value of "n" in NCCF equation:
-    samples_correlated_per_lag = int(correlation_window_size * sample_rate)
+    samples_correlated_per_lag = int(params.correlation_window_size
+                                     * sample_rate)
 
-    # starting value for "k" in NCCF equation
-    shortest_lag_per_frame = int(sample_rate / maximum_allowed_freq)
+    # starting value for "k" in 1st-pass of NCCF equation
+    shortest_lag_per_frame = int(sample_rate / params.maximum_allowed_freq)
 
     # Value of "K" in NCCF equation
-    longest_lag_per_frame = int(sample_rate / minimum_allowed_freq)
+    longest_lag_per_frame = int(sample_rate / params.minimum_allowed_freq)
 
     # Value of "z" in NCCF equation
-    samples_per_frame = int(frame_step_size * sample_rate)
+    samples_per_frame = int(params.frame_step_size * sample_rate)
 
     # Value of "M-1" in NCCF equation
-    max_frame_count = (int(float(len(audio_input)) / float(samples_per_frame)
-                       - 1))
+    max_frame_count = (int(float(len(audio_input)) /
+                       float(samples_per_frame) - 1))
 
     # Difference between "K-1" and starting value of "k"
     lag_range = (longest_lag_per_frame - 1) - shortest_lag_per_frame
@@ -161,7 +154,7 @@ def _first_pass_nccf(audio_input, sample_rate, params):
     # Value of theta_max in NCCF equation
     max_correlation_val = 0.0
 
-    # TODO: Re-read discussion of using double-precision arithmetic in 3.3
+    # TODO: Re-read discussion of using double-precision arithmetic in rapt 3.3
     candidates = numpy.zeros((max_frame_count, lag_range))
     for i in xrange(0, max_frame_count):
         for k in xrange(0, lag_range):
