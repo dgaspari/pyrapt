@@ -19,10 +19,9 @@ def rapt(wavfile_path, **kwargs):
     # Process optional keyword args and build out rapt params
     params = _setup_rapt_params(kwargs)
 
-    # TODO: Flesh out docstring, describe args. Add an array for alg inputs
+    # TODO: Flesh out docstring, describe args, expected vals in kwargs
     sample_rate, audio_sample = _get_audio_data(wavfile_path)
 
-    # TODO: pass max F0 from alg param list to calc downsampling rate method
     downsample_rate = _calculate_downsampling_rate(sample_rate,
                                                    params.maximum_allowed_freq)
     downsampled_audio = _downsample_audio(audio_sample, sample_rate,
@@ -47,7 +46,7 @@ def rapt(wavfile_path, **kwargs):
 def _setup_rapt_params(kwargs):
     # Use optional args for RAPT parameters otherwise use defaults
     params = raptparams.Raptparams()
-    if kwargs is not None:
+    if kwargs is not None and isinstance(kwargs, dict):
         for key, value in kwargs.iteritems():
             if key == 'maximum_allowed_freq':
                 params.maximum_allowed_freq = value
@@ -84,8 +83,9 @@ def _downsample_audio(original_audio, sample_rate, downsampling_rate):
         raise ValueError('Input audio sampling rate is zero. Cannot determine '
                          'downsampling ratio.')
     # resample audio so it only uses a fraction of the original # of samples:
-    downsampled_audio = signal.resample(original_audio,
-                                        len(original_audio) * sample_rate_ratio)
+    number_of_samples = len(original_audio) * sample_rate_ratio
+    downsampled_audio = signal.resample(original_audio, number_of_samples)
+
     return downsampled_audio
 
 
@@ -105,9 +105,9 @@ def _calculate_downsampling_rate(initial_sampling_rate, maximum_f0):
         aReturn = (initial_sampling_rate /
                    round(initial_sampling_rate / (4 * maximum_f0)))
     except ZeroDivisionError:
-        raise ValueError('Ratio of sampling rate and max F0 leads to'
-                         'division by zero. No 1st pass of downsampled '
-                         'audio should occur.')
+        raise ValueError('Ratio of sampling rate and max F0 leads to '
+                         'division by zero. Cannot perform 1st pass of nccf '
+                         'on downsampled audio.')
     return int(aReturn)
 
 # NCCF Functionality:

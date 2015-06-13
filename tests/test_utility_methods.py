@@ -28,6 +28,19 @@ class TestUtilityMethods(TestCase):
         self.assertEqual(0.5, params.frame_step_size)
         self.assertEqual(75, params.correlation_window_size)
 
+    def test_partial_custom_kwargs(self):
+        params = pyrapt._setup_rapt_params({'correlation_window_size': 88})
+        self.assertEqual(500, params.maximum_allowed_freq)
+        self.assertEqual(50, params.minimum_allowed_freq)
+        self.assertEqual(0.01, params.frame_step_size)
+        self.assertEqual(88, params.correlation_window_size)
+
+    def test_non_dict_input_kwrags(self):
+        not_a_dict = 'foo'
+        params = pyrapt._setup_rapt_params(not_a_dict)
+        self.assertEqual(500, params.maximum_allowed_freq)
+        self.assertEqual(0.01, params.frame_step_size)
+
     def test_null_input_error(self):
         with self.assertRaises(IOError):
             pyrapt._get_audio_data('')
