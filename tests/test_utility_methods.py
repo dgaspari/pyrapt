@@ -74,7 +74,7 @@ class TestUtilityMethods(TestCase):
         mock_sample = numpy.array([1, 2, 3])
         mock_signal_resample.return_value = mock_sample
         input_array = numpy.array([1, 2, 3, 4, 5])
-        x = pyrapt._downsample_audio(input_array, 100, 10)
+        x = pyrapt._downsample_audio((100, input_array), 10)
         mock_signal_resample.assert_called_once_with(input_array, .5)
         self.assertTrue(numpy.array_equal(numpy.array([1, 2, 3]), x))
 
@@ -84,4 +84,4 @@ class TestUtilityMethods(TestCase):
         mock_signal_resample.return_value = mock_sample
         input_array = numpy.array([1, 2, 3])
         with self.assertRaises(ValueError):
-            pyrapt._downsample_audio(input_array, 0, 10)
+            pyrapt._downsample_audio((0, input_array), 10)

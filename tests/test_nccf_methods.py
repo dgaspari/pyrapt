@@ -17,8 +17,8 @@ class TestNccfMethods(TestCase):
         sample_rate = 1000
         audio_data = numpy.zeros(1000)
         params = raptparams.Raptparams()
-        candidates, max_corr = pyrapt._first_pass_nccf(audio_data,
-                                                       sample_rate, params)
+        candidates, max_corr = pyrapt._first_pass_nccf((sample_rate,
+                                                        audio_data), params)
         self.assertEqual((99, 17), candidates.shape)
 
     def test_get_signal(self):

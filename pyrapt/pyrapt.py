@@ -20,15 +20,12 @@ def rapt(wavfile_path, **kwargs):
     params = _setup_rapt_params(kwargs)
 
     # TODO: Flesh out docstring, describe args, expected vals in kwargs
-    sample_rate, audio_sample = _get_audio_data(wavfile_path)
+    original_audio = _get_audio_data(wavfile_path)
 
-    downsample_rate = _calculate_downsampling_rate(sample_rate,
-                                                   params.maximum_allowed_freq)
-    downsampled_audio = _downsample_audio(audio_sample, sample_rate,
-                                          downsample_rate)
+    downsampled_audio = _get_downsampled_audio(original_audio,
+                                               params.maximum_allowed_freq)
 
-    first_pass, max_cor = _run_nccf(downsampled_audio, downsample_rate,
-                                    audio_sample, sample_rate, params)
+    first_pass, max_cor = _run_nccf(downsampled_audio, original_audio, params)
 
     # NCCF (normalized cross correlation function) - identify F0 candidates
     # TODO: Determine if we want to preprocess audio before NCCF
@@ -69,10 +66,20 @@ def _get_audio_data(wavfile_path):
         audio_sample = audio_sample[:, 0]/2.0 + audio_sample[:, 1]/2.0
         audio_sample = audio_sample.astype(int)
 
-    return sample_rate, audio_sample
+    return (sample_rate, audio_sample)
 
 
-def _downsample_audio(original_audio, sample_rate, downsampling_rate):
+def _get_downsampled_audio(original_audio, maximum_allowed_freq):
+    """
+    Calc downsampling rate, downsample audio, return as tuple
+    """
+    downsample_rate = _calculate_downsampling_rate(original_audio[0],
+                                                   maximum_allowed_freq)
+    downsampled_audio = _downsample_audio(original_audio, downsample_rate)
+    return (downsample_rate, downsampled_audio)
+
+
+def _downsample_audio(original_audio, downsampling_rate):
     """
     Given the original audio sample/rate and a desired downsampling
     rate, returns a downsampled version of the audio input.
@@ -80,13 +87,13 @@ def _downsample_audio(original_audio, sample_rate, downsampling_rate):
     # TODO: look into applying low pass filter prior to downsampling, as
     # suggested in rapt paper.
     try:
-        sample_rate_ratio = float(downsampling_rate) / float(sample_rate)
+        sample_rate_ratio = float(downsampling_rate) / float(original_audio[0])
     except ZeroDivisionError:
         raise ValueError('Input audio sampling rate is zero. Cannot determine '
                          'downsampling ratio.')
     # resample audio so it only uses a fraction of the original # of samples:
-    number_of_samples = len(original_audio) * sample_rate_ratio
-    downsampled_audio = signal.resample(original_audio, number_of_samples)
+    number_of_samples = len(original_audio[1]) * sample_rate_ratio
+    downsampled_audio = signal.resample(original_audio[1], number_of_samples)
 
     return downsampled_audio
 
@@ -116,20 +123,21 @@ def _calculate_downsampling_rate(initial_sampling_rate, maximum_f0):
 # TODO: Consider moving nccf functions into a separate module / file?
 
 
-def _run_nccf(downsampled_audio, downsampling_rate, original_audio,
-              sampling_rate, params):
-    first_pass, max_cor = _first_pass_nccf(downsampled_audio,
-                                           downsampling_rate, params)
+def _run_nccf(downsampled_audio, original_audio, params):
+    first_pass, max_cor = _first_pass_nccf(downsampled_audio, params)
 
     # run second pass
 
     return first_pass, max_cor
 
 
-def _first_pass_nccf(audio_input, sample_rate, params):
+def _first_pass_nccf(downsampled_audio, params):
     # Runs normalized cross correlation function (NCCF) on downsampled audio,
     # outputting a set of potential F0 candidates that could be used to
     # determine the pitch at each given frame of the audio sample.
+
+    sample_rate = downsampled_audio[0]
+    audio_input = downsampled_audio[1]
 
     # Value of "n" in NCCF equation:
     samples_correlated_per_lag = int(params.correlation_window_size
