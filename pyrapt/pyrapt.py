@@ -9,6 +9,7 @@ from scipy import signal
 from scipy.io import wavfile
 
 import raptparams
+import nccfparams
 
 
 def rapt(wavfile_path, **kwargs):
@@ -131,152 +132,79 @@ def _run_nccf(downsampled_audio, original_audio, params):
     return first_pass, max_cor
 
 
-def _first_pass_nccf(downsampled_audio, params):
+def _first_pass_nccf(audio, params):
     # Runs normalized cross correlation function (NCCF) on downsampled audio,
     # outputting a set of potential F0 candidates that could be used to
     # determine the pitch at each given frame of the audio sample.
 
-    sample_rate = downsampled_audio[0]
-    audio_input = downsampled_audio[1]
-
-    # Value of "n" in NCCF equation:
-    samples_correlated_per_lag = int(params.correlation_window_size
-                                     * sample_rate)
-
-    # starting value for "k" in 1st-pass of NCCF equation
-    shortest_lag_per_frame = int(sample_rate / params.maximum_allowed_freq)
-
-    # Value of "K" in NCCF equation
-    longest_lag_per_frame = int(sample_rate / params.minimum_allowed_freq)
-
-    # Value of "z" in NCCF equation
-    samples_per_frame = int(params.frame_step_size * sample_rate)
-
-    # Value of "M-1" in NCCF equation
-    max_frame_count = (int(float(len(audio_input)) /
-                       float(samples_per_frame) - 1))
+    nccfparam = _get_nccf_params(audio, params, True)
 
     # Difference between "K-1" and starting value of "k"
-    lag_range = (longest_lag_per_frame - 1) - shortest_lag_per_frame
+    lag_range = ((nccfparam.longest_lag_per_frame - 1) -
+                 nccfparam.shortest_lag_per_frame)
 
     # Value of theta_max in NCCF equation
     max_correlation_val = 0.0
 
     # TODO: Re-read discussion of using double-precision arithmetic in rapt 3.3
-    candidates = numpy.zeros((max_frame_count, lag_range))
-    for i in xrange(0, max_frame_count):
+    candidates = numpy.zeros((nccfparam.max_frame_count, lag_range))
+    for i in xrange(0, nccfparam.max_frame_count):
         for k in xrange(0, lag_range):
-            current_lag = k + shortest_lag_per_frame
+            current_lag = k + nccfparam.shortest_lag_per_frame
 
             # determine if the current lag value causes us to go past the
             # end of the audio sample - if so - skip and set val to 0
-            if ((current_lag + (samples_correlated_per_lag - 1)
-                    + (i * samples_per_frame)) >= audio_input.size):
+            if ((current_lag + (nccfparam.samples_correlated_per_lag - 1)
+                    + (i * nccfparam.samples_per_frame)) >= audio[1].size):
                 candidates[i][k] = 0
                 continue
 
-            samples = 0
-            for j in xrange(0, samples_correlated_per_lag - 1):
-                correlated_samples = _get_sample(audio_input, i, j,
-                                                 samples_per_frame,
-                                                 samples_correlated_per_lag,
-                                                 longest_lag_per_frame)
-                samples_for_lag = _get_sample(audio_input, i, j + current_lag,
-                                              samples_per_frame,
-                                              samples_correlated_per_lag,
-                                              longest_lag_per_frame)
-                samples += correlated_samples * samples_for_lag
+            candidates[i][k] = _get_correlation(audio, i, current_lag,
+                                                nccfparam)
 
-            denominator = _get_nccf_denominator_val(audio_input, i, 0,
-                                                    samples_per_frame,
-                                                    samples_correlated_per_lag,
-                                                    longest_lag_per_frame)
-
-            denominator *= _get_nccf_denominator_val(audio_input, i,
-                                                     current_lag,
-                                                     samples_per_frame,
-                                                     samples_correlated_per_lag,
-                                                     longest_lag_per_frame)
-            candidates[i][k] = float(samples) / float(denominator)
             if candidates[i][k] > max_correlation_val:
                 max_correlation_val = candidates[i][k]
 
     return candidates, max_correlation_val
 
 
-def _second_pass_nccf(audio_input, sample_rate, first_pass):
-    # TODO: Make these optional params that default to below values:
-    # Value of "F0_max" in NCCF equation:
-    # maximum_allowed_freq = 500
-    # Value of "F0_min" in NCCF equation:
-    minimum_allowed_freq = 50
-    # Value of "t" in NCCF equation:
-    frame_step_size = 0.01
-    # Value of "w" in NCCF equation:
-    correlation_window_size = 0.0075
-    # Value of "AFACT" in NCCF equation:
-    absolute_frequency_addition = 10000
+def _get_nccf_params(audio_input, raptparams, is_firstpass):
+    """
+    Creates and returns nccfparams object w/ nccf-specific values
+    """
+    nccfparam = nccfparams.Nccfparams()
+    nccfparam.samples_correlated_per_lag = int(
+        raptparams.correlation_window_size * audio_input[0])
 
-    # Value of "n" in NCCF equation:
-    samples_correlated_per_lag = int(correlation_window_size * sample_rate)
+    if(is_firstpass):
+        nccfparam.shortest_lag_per_frame = int(audio_input[0] /
+                                               raptparams.maximum_allowed_freq)
+    else:
+        nccfparam.shortest_lag_per_frame = 0
 
-    # starting value for "k" in NCCF equation
-    # NOTE: THIS IS ONLY MEANT FOR FIRST PASS, OTHERWISE k STARTS AT ZERO
-    # shortest_lag_per_frame = int(sample_rate / maximum_allowed_freq)
-    shortest_lag_per_frame = 0
+    nccfparam.longest_lag_per_frame = int(audio_input[0] /
+                                          raptparams.minimum_allowed_freq)
+    nccfparam.samples_per_frame = int(raptparams.frame_step_size *
+                                      audio_input[0])
+    nccfparam.max_frame_count = (int(float(len(audio_input[1])) /
+                                 float(nccfparam.samples_per_frame) - 1))
 
-    # Value of "K" in NCCF equation
-    longest_lag_per_frame = int(sample_rate / minimum_allowed_freq)
+    return nccfparam
 
-    # Value of "z" in NCCF equation
-    samples_per_frame = int(frame_step_size * sample_rate)
 
-    # Value of "M-1" in NCCF equation
-    max_frame_count = (int(float(len(audio_input)) / float(samples_per_frame)
-                       - 1))
+def _get_correlation(audio, frame, lag, nccfparam):
+    samples = 0
+    for j in xrange(0, nccfparam.samples_correlated_per_lag - 1):
+        correlated_samples = _get_sample(audio, frame, j, nccfparam)
+        samples_for_lag = _get_sample(audio, frame, j + lag, nccfparam)
+        samples += correlated_samples * samples_for_lag
 
-    # Difference between "K-1" and starting value of "k"
-    lag_range = (longest_lag_per_frame - 1) - shortest_lag_per_frame
+    denominator = _get_nccf_denominator_val(audio, frame, 0, nccfparam)
 
-    # TODO: Re-read discussion of using double-precision arithmetic in 3.3
-    candidates = numpy.zeros((max_frame_count, lag_range))
-    for i in xrange(0, max_frame_count):
-        for k in xrange(0, lag_range):
-            current_lag = k + shortest_lag_per_frame
+    denominator *= _get_nccf_denominator_val(audio, frame, lag, nccfparam)
 
-            # determine if the current lag value causes us to go past the
-            # end of the audio sample - if so - skip and set val to 0
-            if ((current_lag + (samples_correlated_per_lag - 1)
-                    + (i * samples_per_frame)) >= audio_input.size):
-                candidates[i][k] = 0
-                continue
+    return float(samples) / float(denominator)
 
-            samples = 0
-            for j in xrange(0, samples_correlated_per_lag - 1):
-                correlated_samples = _get_sample(audio_input, i, j,
-                                                 samples_per_frame,
-                                                 samples_correlated_per_lag,
-                                                 longest_lag_per_frame)
-                samples_for_lag = _get_sample(audio_input, i, j + current_lag,
-                                              samples_per_frame,
-                                              samples_correlated_per_lag,
-                                              longest_lag_per_frame)
-                samples += correlated_samples * samples_for_lag
-
-            denominator = _get_nccf_denominator_val(audio_input, i, 0,
-                                                    samples_per_frame,
-                                                    samples_correlated_per_lag,
-                                                    longest_lag_per_frame)
-
-            denominator *= _get_nccf_denominator_val(audio_input, i,
-                                                     current_lag,
-                                                     samples_per_frame,
-                                                     samples_correlated_per_lag,
-                                                     longest_lag_per_frame)
-            denominator += math.sqrt(absolute_frequency_addition)
-            candidates[i][k] = float(samples) / float(denominator)
-
-    return candidates
 
 # TODO: at some point start_sample is FURTHER than last_sample_in_frame
 # (when calculating denominator). Why is that? we use m + n - 1 for
@@ -292,37 +220,34 @@ def _second_pass_nccf(audio_input, sample_rate, first_pass):
 
 
 # TODO: Figure out array out of bounds error
-def _get_sample(audio_input, frame_index, correlation_index, samples_per_frame,
-                samples_correlated_per_lag, longest_lag_per_frame):
+def _get_sample(audio, frame, correlation_index, nccfparam):
     returned_signal = 0
     # value of "m" in NCCF equation (m=iz)
-    frame_start = frame_index * samples_per_frame
+    frame_start = frame * nccfparam.samples_per_frame
     # value of "m+j" in NCCF equation
     current_sample_index = frame_start + correlation_index
 
     # value of "x_m+j" in NCCF equation
-    current_sample = audio_input[current_sample_index]
+    current_sample = audio[1][current_sample_index]
     # value of "m + n - 1"
-    last_sample_in_frame = frame_start + samples_correlated_per_lag - 1
+    last_sample_in_frame = (frame_start + nccfparam.samples_correlated_per_lag
+                            - 1)
     # summation of samples from "m" to "m+n-1"
-    sum_frame_samples = sum(audio_input[frame_start:last_sample_in_frame])
+    sum_frame_samples = sum(audio[1][frame_start:last_sample_in_frame])
     # value of "u_i" in NCCF equation
-    mean_for_window = ((float(1.0) / float(samples_correlated_per_lag)) *
-                       sum_frame_samples)
+    mean_for_window = ((float(1.0) /
+                        float(nccfparam.samples_correlated_per_lag))
+                       * sum_frame_samples)
 
     returned_signal = current_sample - mean_for_window
 
     return returned_signal
 
 
-def _get_nccf_denominator_val(audio_input, frame_index, starting_val,
-                              samples_per_frame, samples_correlated_per_lag,
-                              longest_lag_per_frame):
+def _get_nccf_denominator_val(audio, frame, starting_val, nccfparam):
     total_sum = 0.0
     for l in xrange(starting_val,
-                    starting_val + samples_correlated_per_lag - 1):
-        samples = _get_sample(audio_input, frame_index, l, samples_per_frame,
-                              samples_correlated_per_lag,
-                              longest_lag_per_frame)
+                    starting_val + nccfparam.samples_correlated_per_lag - 1):
+        samples = _get_sample(audio, frame, l, nccfparam)
         total_sum += math.pow(2, samples)
     return total_sum

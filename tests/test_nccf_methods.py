@@ -8,6 +8,7 @@ import numpy
 
 from pyrapt import pyrapt
 from pyrapt import raptparams
+from pyrapt import nccfparams
 
 
 class TestNccfMethods(TestCase):
@@ -22,12 +23,16 @@ class TestNccfMethods(TestCase):
         self.assertEqual((99, 17), candidates.shape)
 
     def test_get_signal(self):
+        param = nccfparams.Nccfparams()
+        param.samples_correlated_per_lag = 8
+        param.samples_per_frame = 10
+
         # sample_rate = 1000
-        audio_data = numpy.ones(1000)
-        audio_data2 = numpy.zeros(1000)
-        signal = pyrapt._get_sample(audio_data, 0, 0, 10, 8, 20)
+        audio_data = (100, numpy.ones(1000))
+        audio_data2 = (100, numpy.zeros(1000))
+        signal = pyrapt._get_sample(audio_data, 0, 0, param)
         self.assertEqual(0.125, signal)
-        signal = pyrapt._get_sample(audio_data2, 0, 0, 10, 8, 20)
+        signal = pyrapt._get_sample(audio_data2, 0, 0, param)
         self.assertEqual(0, 0, signal)
-        signal = pyrapt._get_sample(audio_data, 5, 0, 10, 8, 20)
+        signal = pyrapt._get_sample(audio_data, 5, 0, param)
         self.assertEqual(0.125, signal)
