@@ -229,18 +229,20 @@ def _get_sample(audio, frame, correlation_index, nccfparam):
     frame_start = frame * nccfparam.samples_per_frame
     # value of "m+j" in NCCF equation
     current_sample_index = frame_start + correlation_index
-
     # value of "x_m+j" in NCCF equation
     current_sample = audio[1][current_sample_index]
     # value of "m + n - 1"
-    last_sample_in_frame = (frame_start + nccfparam.samples_correlated_per_lag
-                            - 1)
-    # summation of samples from "m" to "m+n-1"
-    sum_frame_samples = sum(audio[1][frame_start:last_sample_in_frame])
+    last_sample_in_frame = frame_start + nccfparam.samples_correlated_per_lag
+
+# summation of samples from "m" to "m+n-1"
+    # sum_frame_samples = sum(audio[1][frame_start:last_sample_in_frame])
+    frame_sample_sum = 0.0
+    for j in xrange(frame_start, last_sample_in_frame):
+        frame_sample_sum += audio[1][j]
     # value of "u_i" in NCCF equation
-    mean_for_window = ((float(1.0) /
-                        float(nccfparam.samples_correlated_per_lag))
-                       * sum_frame_samples)
+    mean_for_window = ((float(1.0)
+                       / float(nccfparam.samples_correlated_per_lag))
+                       * frame_sample_sum)
 
     returned_signal = current_sample - mean_for_window
 
@@ -248,9 +250,11 @@ def _get_sample(audio, frame, correlation_index, nccfparam):
 
 
 def _get_nccf_denominator_val(audio, frame, starting_val, nccfparam):
+    # Calculates the denominator value of the NCCF equation
+    # (e_j in the formula)
     total_sum = 0.0
     for l in xrange(starting_val,
                     starting_val + nccfparam.samples_correlated_per_lag - 1):
-        samples = _get_sample(audio, frame, l, nccfparam)
-        total_sum += math.pow(samples, 2)
+        sample = _get_sample(audio, frame, l, nccfparam)
+        total_sum += math.pow(sample, 2)
     return total_sum
