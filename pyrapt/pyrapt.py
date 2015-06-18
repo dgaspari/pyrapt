@@ -173,19 +173,22 @@ def _get_nccf_params(audio_input, raptparams, is_firstpass):
     Creates and returns nccfparams object w/ nccf-specific values
     """
     nccfparam = nccfparams.Nccfparams()
+    # Value of "n" in NCCF equation:
     nccfparam.samples_correlated_per_lag = int(
         raptparams.correlation_window_size * audio_input[0])
-
+    # Starting value of "k" in NCCF equation:
     if(is_firstpass):
         nccfparam.shortest_lag_per_frame = int(audio_input[0] /
                                                raptparams.maximum_allowed_freq)
     else:
         nccfparam.shortest_lag_per_frame = 0
-
+    # Value of "K" in NCCF equation
     nccfparam.longest_lag_per_frame = int(audio_input[0] /
                                           raptparams.minimum_allowed_freq)
+    # Value of "z" in NCCF equation
     nccfparam.samples_per_frame = int(raptparams.frame_step_size *
                                       audio_input[0])
+    # Value of "M-1" in NCCF equation:
     nccfparam.max_frame_count = (int(float(len(audio_input[1])) /
                                  float(nccfparam.samples_per_frame) - 1))
 
@@ -249,5 +252,5 @@ def _get_nccf_denominator_val(audio, frame, starting_val, nccfparam):
     for l in xrange(starting_val,
                     starting_val + nccfparam.samples_correlated_per_lag - 1):
         samples = _get_sample(audio, frame, l, nccfparam)
-        total_sum += math.pow(2, samples)
+        total_sum += math.pow(samples, 2)
     return total_sum
