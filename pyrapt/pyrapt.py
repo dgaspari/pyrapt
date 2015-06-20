@@ -54,6 +54,10 @@ def _setup_rapt_params(kwargs):
                 params.frame_step_size = value
             if key == 'correlation_window_size':
                 params.correlation_window_size = value
+            if key == 'max_hypotheses_per_frame':
+                params.max_hypotheses_per_frame = value
+            if key == 'min_acceptable_peak_val':
+                params.min_acceptable_peak_val = value
 
     return params
 

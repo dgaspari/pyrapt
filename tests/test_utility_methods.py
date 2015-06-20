@@ -17,16 +17,22 @@ class TestUtilityMethods(TestCase):
         self.assertEqual(50, params.minimum_allowed_freq)
         self.assertEqual(0.01, params.frame_step_size)
         self.assertEqual(0.0075, params.correlation_window_size)
+        self.assertEqual(20, params.max_hypotheses_per_frame)
+        self.assertEqual(0.3, params.min_acceptable_peak_val)
 
     def test_custom_kwargs(self):
         params = pyrapt._setup_rapt_params({'maximum_allowed_freq': 250,
                                             'minimum_allowed_freq': 100,
                                             'frame_step_size': 0.5,
-                                            'correlation_window_size': 75})
+                                            'correlation_window_size': 75,
+                                            'max_hypotheses_per_frame': 5,
+                                            'min_acceptable_peak_val': 1.5})
         self.assertEqual(250, params.maximum_allowed_freq)
         self.assertEqual(100, params.minimum_allowed_freq)
         self.assertEqual(0.5, params.frame_step_size)
         self.assertEqual(75, params.correlation_window_size)
+        self.assertEqual(5, params.max_hypotheses_per_frame)
+        self.assertEqual(1.5, params.min_acceptable_peak_val)
 
     def test_partial_custom_kwargs(self):
         params = pyrapt._setup_rapt_params({'correlation_window_size': 88})

@@ -20,3 +20,9 @@ class Raptparams:
 
         # Value of "w" in NCCF equation:
         self.correlation_window_size = 0.0075
+
+        # Value of "N_CANDS" in NCCF equation:
+        self.max_hypotheses_per_frame = 20
+
+        # Value of "CAND_TR" in NCCF equation:
+        self.min_acceptable_peak_val = 0.3
