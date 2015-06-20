@@ -147,15 +147,22 @@ def _first_pass_nccf(audio, params):
     lag_range = ((nccfparam.longest_lag_per_frame - 1) -
                  nccfparam.shortest_lag_per_frame)
 
-    # Value of theta_max in NCCF equation
-    max_correlation_val = 0.0
-
     # TODO: Re-read discussion of using double-precision arithmetic in rapt 3.3
 
     # NOTE: Because we are using max_frame_count exclusively for array size,
     # we do not run into issues with using xrange to iterate thru each frame, i
+
     candidates = numpy.zeros((nccfparam.max_frame_count, lag_range))
+
+    # NOTE: We also, likewise, use max_hypotheses - 1 for array size so it is
+    # ok to use it for xrange:
+
+    marked_values = numpy.zeros((nccfparam.max_frame_count,
+                                 params.max_hypotheses_per_frame - 1))
+
     for i in xrange(0, nccfparam.max_frame_count):
+        # Value of theta_max in NCCF equation, max for the current frame
+        max_correlation_val = 0.0
         for k in xrange(0, lag_range):
             current_lag = k + nccfparam.shortest_lag_per_frame
 
@@ -171,6 +178,10 @@ def _first_pass_nccf(audio, params):
 
             if candidates[i][k] > max_correlation_val:
                 max_correlation_val = candidates[i][k]
+        min_valid_correlation = (max_correlation_val *
+                                 params.min_acceptable_peak_val)
+        marked_values[i] = _get_marked_firstpass_results(candidates[i], params,
+                                                         min_valid_correlation)
 
     return candidates, max_correlation_val
 
@@ -200,6 +211,11 @@ def _get_nccf_params(audio_input, raptparams, is_firstpass):
                                  float(nccfparam.samples_per_frame)) - 1)
 
     return nccfparam
+
+
+def _get_marked_firstpass_results(candidates_for_frame, params,
+                                  min_valid_correlation):
+    return 0
 
 
 def _get_correlation(audio, frame, lag, nccfparam):
