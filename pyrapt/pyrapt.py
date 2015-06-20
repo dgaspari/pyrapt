@@ -253,8 +253,9 @@ def _get_nccf_denominator_val(audio, frame, starting_val, nccfparam):
     # Calculates the denominator value of the NCCF equation
     # (e_j in the formula)
     total_sum = 0.0
+    # NOTE that I am adding 1 to the xrange to be inclusive:
     for l in xrange(starting_val,
-                    starting_val + nccfparam.samples_correlated_per_lag - 1):
-        sample = _get_sample(audio, frame, l, nccfparam)
+                    starting_val + nccfparam.samples_correlated_per_lag):
+        sample = float(_get_sample(audio, frame, l, nccfparam))
         total_sum += math.pow(sample, 2)
     return total_sum

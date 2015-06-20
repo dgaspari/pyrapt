@@ -38,5 +38,9 @@ class TestNccfMethods(TestCase):
         param = nccfparams.Nccfparams()
         param.samples_correlated_per_lag = 4
         mock_get_signal.return_value = 5.0
-        returned = pyrapt._get_nccf_denominator_val(audio_data, 0, 0, param)
-        self.assertEqual(75, returned)
+        returned = pyrapt._get_nccf_denominator_val(audio_data, 0, 1, param)
+        self.assertEqual(100.0, returned)
+        param.samples_correlated_per_lag = 3
+        mock_get_signal.return_value = 2.0
+        returned = pyrapt._get_nccf_denominator_val(audio_data, 0, 4, param)
+        self.assertEqual(12.0, returned)
