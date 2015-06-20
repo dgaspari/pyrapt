@@ -13,7 +13,9 @@ from pyrapt import nccfparams
 
 class TestNccfMethods(TestCase):
 
-    def test_nccf_return_dimensions(self):
+    @patch('pyrapt.pyrapt._get_correlation')
+    def test_nccf_return_dimensions(self, mock_get_correlation):
+        mock_get_correlation.return_value = 0.0
         # TODO: This is with default params. Do it with passed in ones as well
         sample_rate = 2004
         audio_data = numpy.full(3346, 5.0)
@@ -21,21 +23,6 @@ class TestNccfMethods(TestCase):
         candidates, max_corr = pyrapt._first_pass_nccf((sample_rate,
                                                         audio_data), params)
         self.assertEqual((166, 35), candidates.shape)
-
-    def test_get_signal(self):
-        param = nccfparams.Nccfparams()
-        param.samples_correlated_per_lag = 8
-        param.samples_per_frame = 10
-
-        # sample_rate = 1000
-        audio_data = (100, numpy.ones(1000))
-        audio_data2 = (100, numpy.zeros(1000))
-        signal = pyrapt._get_sample(audio_data, 0, 0, param)
-        self.assertEqual(0.125, signal)
-        signal = pyrapt._get_sample(audio_data2, 0, 0, param)
-        self.assertEqual(0, 0, signal)
-        signal = pyrapt._get_sample(audio_data, 5, 0, param)
-        self.assertEqual(0.125, signal)
 
     def test_get_sample(self):
         param = nccfparams.Nccfparams()

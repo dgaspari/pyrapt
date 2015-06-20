@@ -21,4 +21,4 @@ class TestMainRaptMethods(TestCase):
             with patch('pyrapt.pyrapt._run_nccf') as mock_get_nccf:
                 mock_get_nccf.return_value = (numpy.zeros((10, 10)), 0.5)
                 x, y = pyrapt.rapt('test.wav')
-                self.assertEqual(y, 0.5)
+                self.assertEqual(0.5, y)
