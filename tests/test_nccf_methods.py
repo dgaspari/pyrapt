@@ -13,6 +13,36 @@ from pyrapt import nccfparams
 
 class TestNccfMethods(TestCase):
 
+    @patch('pyrapt.pyrapt._first_pass_nccf')
+    def test_run_nccf(self, mock_first_pass):
+        mock_first_pass.return_value = (77.0, 22.0)
+        downsampled_audio = (10, numpy.array([0, 1, 2, 3]))
+        original_audio = (100, numpy.array([0, 1, 2, 3, 4, 5, 6]))
+        params = raptparams.Raptparams()
+        x, y = pyrapt._run_nccf(downsampled_audio, original_audio, params)
+        self.assertEqual(77.0, x)
+        self.assertEqual(22.0, y)
+
+    def test_get_nccfparams(self):
+        audio_input = (10, numpy.zeros(60))
+        params = raptparams.Raptparams()
+        params.correlation_window_size = 2.0
+        params.minimum_allowed_freq = 2.0
+        params.maximum_allowed_freq = 2.0
+        params.frame_step_size = 2.0
+        first_params = pyrapt._get_nccf_params(audio_input, params, True)
+        self.assertEqual(20, first_params.samples_correlated_per_lag)
+        self.assertEqual(5, first_params.shortest_lag_per_frame)
+        self.assertEqual(5, first_params.longest_lag_per_frame)
+        self.assertEqual(20, first_params.samples_per_frame)
+        self.assertEqual(2, first_params.max_frame_count)
+        second_params = pyrapt._get_nccf_params(audio_input, params, False)
+        self.assertEqual(0, second_params.shortest_lag_per_frame)
+        self.assertEqual(5, second_params.longest_lag_per_frame)
+        self.assertEqual(20, second_params.samples_correlated_per_lag)
+        self.assertEqual(2, second_params.max_frame_count)
+
+    # TODO: test logic that doesn't calc for lags that exceed sample array len
     @patch('pyrapt.pyrapt._get_correlation')
     def test_nccf_return_dimensions(self, mock_get_correlation):
         mock_get_correlation.return_value = 0.0
@@ -23,8 +53,6 @@ class TestNccfMethods(TestCase):
         candidates, max_corr = pyrapt._first_pass_nccf((sample_rate,
                                                         audio_data), params)
         self.assertEqual((166, 35), candidates.shape)
-
-    # TODO: test nccf param builder method
 
     # TODO: have variable return values for mocks depending on inputs
     # TODO: verify inputs came in as expected:
