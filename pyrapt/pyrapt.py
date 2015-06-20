@@ -147,6 +147,9 @@ def _first_pass_nccf(audio, params):
     max_correlation_val = 0.0
 
     # TODO: Re-read discussion of using double-precision arithmetic in rapt 3.3
+
+    # NOTE: Because we are using max_frame_count exclusively for array size,
+    # we do not run into issues with using xrange to iterate thru each frame, i
     candidates = numpy.zeros((nccfparam.max_frame_count, lag_range))
     for i in xrange(0, nccfparam.max_frame_count):
         for k in xrange(0, lag_range):
@@ -190,7 +193,7 @@ def _get_nccf_params(audio_input, raptparams, is_firstpass):
                                       audio_input[0])
     # Value of "M-1" in NCCF equation:
     nccfparam.max_frame_count = (int(float(len(audio_input[1])) /
-                                 float(nccfparam.samples_per_frame) - 1))
+                                 float(nccfparam.samples_per_frame)) - 1)
 
     return nccfparam
 
