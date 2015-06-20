@@ -24,6 +24,21 @@ class TestNccfMethods(TestCase):
                                                         audio_data), params)
         self.assertEqual((166, 35), candidates.shape)
 
+    # TODO: test nccf param builder method
+
+    # TODO: have variable return values for mocks depending on inputs
+    # TODO: verify inputs came in as expected:
+    @patch('pyrapt.pyrapt._get_nccf_denominator_val')
+    def test_get_correlation(self, mock_denominator):
+        audio = (10, numpy.array([0, 1, 2, 3, 4, 5]))
+        params = nccfparams.Nccfparams()
+        params.samples_correlated_per_lag = 5
+        mock_denominator.return_value = 2.0
+        with patch('pyrapt.pyrapt._get_sample') as mock_sample:
+            mock_sample.return_value = 4.0
+            correlation = pyrapt._get_correlation(audio, 0, 0, params)
+            self.assertEqual(20.0, correlation)
+
     def test_get_sample(self):
         param = nccfparams.Nccfparams()
         param.samples_correlated_per_lag = 5

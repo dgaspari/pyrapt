@@ -197,7 +197,9 @@ def _get_nccf_params(audio_input, raptparams, is_firstpass):
 
 def _get_correlation(audio, frame, lag, nccfparam):
     samples = 0
-    for j in xrange(0, nccfparam.samples_correlated_per_lag - 1):
+    # NOTE: NCCF formula has inclusive summation from 0 to n-1, but must add
+    # 1 to max value here due to standard behavior of range/xrange:
+    for j in xrange(0, nccfparam.samples_correlated_per_lag):
         correlated_samples = _get_sample(audio, frame, j, nccfparam)
         samples_for_lag = _get_sample(audio, frame, j + lag, nccfparam)
         samples += correlated_samples * samples_for_lag
@@ -222,7 +224,6 @@ def _get_correlation(audio, frame, lag, nccfparam):
 # try and calc sum of input from 3333 to 3314
 
 
-# TODO: Figure out array out of bounds error
 def _get_sample(audio, frame, correlation_index, nccfparam):
     returned_signal = 0
     # value of "m" in NCCF equation (m=iz)
