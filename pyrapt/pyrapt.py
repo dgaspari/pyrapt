@@ -154,12 +154,6 @@ def _first_pass_nccf(audio, params):
 
     candidates = [None] * nccfparam.max_frame_count
 
-    # NOTE: We also, likewise, use max_hypotheses - 1 for array size so it is
-    # ok to use it for xrange:
-
-    # marked_values = numpy.zeros((nccfparam.max_frame_count,
-    #                             params.max_hypotheses_per_frame - 1))
-
     for i in xrange(0, nccfparam.max_frame_count):
         candidates[i] = _get_firstpass_frame_results(
             audio, i, lag_range, nccfparam, params)
@@ -234,8 +228,13 @@ def _get_correlations_for_all_lags(audio, current_frame, lag_range, nccfparam):
     return (candidates, max_correlation_val)
 
 
-def _get_marked_firstpass_results(candidates_for_frame, params,
+def _get_marked_firstpass_results(candidates_for_frame, nccfparam,
                                   min_valid_correlation):
+    candidates_for_interpolation = []
+    for k, k_val in enumerate(candidates_for_frame):
+        current_lag = k + nccfparam.shortest_lag_per_frame
+        if k_val >= min_valid_correlation:
+            candidates_for_interpolation.append((current_lag, k_val))
     return 0.0
 
 

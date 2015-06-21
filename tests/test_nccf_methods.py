@@ -91,7 +91,12 @@ class TestNccfMethods(TestCase):
         self.assertEqual(0.4, results[0][7])
 
     def test_get_marked_firstpass_results(self):
-        marked_values = pyrapt._get_marked_firstpass_results(None, None, None)
+        candidates = [0.5, 0.2, 0.6, 0.8]
+        param = nccfparams.Nccfparams()
+        param.shortest_lag_per_frame = 7
+        min_valid_correlation = 0.5
+        marked_values = pyrapt._get_marked_firstpass_results(
+            candidates, param, min_valid_correlation)
         self.assertEqual(0.0, marked_values)
 
     # TODO: have variable return values for mocks depending on inputs
