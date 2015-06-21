@@ -157,31 +157,12 @@ def _first_pass_nccf(audio, params):
     # NOTE: We also, likewise, use max_hypotheses - 1 for array size so it is
     # ok to use it for xrange:
 
-    marked_values = numpy.zeros((nccfparam.max_frame_count,
-                                 params.max_hypotheses_per_frame - 1))
+    # marked_values = numpy.zeros((nccfparam.max_frame_count,
+    #                             params.max_hypotheses_per_frame - 1))
 
     for i in xrange(0, nccfparam.max_frame_count):
-        # Value of theta_max in NCCF equation, max for the current frame
-        max_correlation_val = 0.0
-        for k in xrange(0, lag_range):
-            current_lag = k + nccfparam.shortest_lag_per_frame
-
-            # determine if the current lag value causes us to go past the
-            # end of the audio sample - if so - skip and set val to 0
-            if ((current_lag + (nccfparam.samples_correlated_per_lag - 1)
-                    + (i * nccfparam.samples_per_frame)) >= audio[1].size):
-                candidates[i][k] = 0
-                continue
-
-            candidates[i][k] = _get_correlation(audio, i, current_lag,
-                                                nccfparam)
-
-            if candidates[i][k] > max_correlation_val:
-                max_correlation_val = candidates[i][k]
-        min_valid_correlation = (max_correlation_val *
-                                 params.min_acceptable_peak_val)
-        marked_values[i] = _get_marked_firstpass_results(candidates[i], params,
-                                                         min_valid_correlation)
+        candidates[i], max_correlation_val = _get_firstpass_frame_results(
+            audio, i, lag_range, nccfparam)
 
     return candidates, max_correlation_val
 
@@ -211,6 +192,32 @@ def _get_nccf_params(audio_input, raptparams, is_firstpass):
                                  float(nccfparam.samples_per_frame)) - 1)
 
     return nccfparam
+
+
+def _get_firstpass_frame_results(audio, current_frame, lag_range, nccfparam):
+    # Value of theta_max in NCCF equation, max for the current frame
+    candidates = numpy.zeros(lag_range)
+    max_correlation_val = 0.0
+    for k in xrange(0, lag_range):
+        current_lag = k + nccfparam.shortest_lag_per_frame
+
+        # determine if the current lag value causes us to go past the
+        # end of the audio sample - if so - skip and set val to 0
+        if ((current_lag + (nccfparam.samples_correlated_per_lag - 1)
+             + (current_frame * nccfparam.samples_per_frame)) >= audio[1].size):
+            candidates[k] = 0
+            continue
+
+        candidates[k] = _get_correlation(audio, current_frame, current_lag,
+                                         nccfparam)
+
+        if candidates[k] > max_correlation_val:
+            max_correlation_val = candidates[k]
+    # min_valid_correlation = (max_correlation_val *
+    #                            params.min_acceptable_peak_val)
+    # marked_values[i] = _get_marked_firstpass_results(candidates[i], params,
+    #                                                    min_valid_correlation)
+    return candidates, max_correlation_val
 
 
 def _get_marked_firstpass_results(candidates_for_frame, params,
