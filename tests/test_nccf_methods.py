@@ -3,6 +3,7 @@ Unit tests for methods used during NCCF calculations
 """
 from unittest import TestCase
 from mock import patch
+from mock import ANY
 
 import numpy
 
@@ -59,15 +60,19 @@ class TestNccfMethods(TestCase):
     def test_get_results_for_frame(self, mock_get_for_all_lags):
         mock_get_for_all_lags.return_value = ([0.2] * 35, 0.3)
         audio = (2004, numpy.full(3346, 5.0))
+        raptparam = raptparams.Raptparams()
         params = nccfparams.Nccfparams()
         params.samples_correlated_per_lag = 20
         params.samples_per_frame = 20
         params.shortest_lag_per_frame = 10
         lag_range = 8
-        results = pyrapt._get_firstpass_frame_results(audio, 5,
-                                                      lag_range, params)
-        self.assertEqual(35, len(results[0]))
-        self.assertEqual(0.3, results[1])
+        with patch('pyrapt.pyrapt._get_marked_firstpass_results') as mock_mark:
+            mock_mark.return_value = 0
+            results = pyrapt._get_firstpass_frame_results(audio, 5, lag_range,
+                                                          params, raptparam)
+            mock_mark.assert_called_once_with(ANY, ANY, ANY)
+            self.assertEqual(35, len(results[0]))
+            self.assertEqual(0.3, results[1])
 
     # TODO: test logic where we avoid lags that exceed sample array len
     @patch('pyrapt.pyrapt._get_correlation')
@@ -84,6 +89,10 @@ class TestNccfMethods(TestCase):
         self.assertEqual(0.4, results[1])
         self.assertEqual(8, len(results[0]))
         self.assertEqual(0.4, results[0][7])
+
+    def test_get_marked_firstpass_results(self):
+        marked_values = pyrapt._get_marked_firstpass_results(None, None, None)
+        self.assertEqual(0.0, marked_values)
 
     # TODO: have variable return values for mocks depending on inputs
     # TODO: verify inputs came in as expected:

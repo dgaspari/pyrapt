@@ -162,7 +162,7 @@ def _first_pass_nccf(audio, params):
 
     for i in xrange(0, nccfparam.max_frame_count):
         candidates[i] = _get_firstpass_frame_results(
-            audio, i, lag_range, nccfparam)
+            audio, i, lag_range, nccfparam, params)
 
     return candidates
 
@@ -194,14 +194,18 @@ def _get_nccf_params(audio_input, raptparams, is_firstpass):
     return nccfparam
 
 
-def _get_firstpass_frame_results(audio, current_frame, lag_range, nccfparam):
+def _get_firstpass_frame_results(audio, current_frame, lag_range,
+                                 nccfparam, raptparam):
+    # calculate correlation (theta) for all lags, and get the highest
+    # correlation val (theta_max) from the calculated lags:
     all_lag_results = _get_correlations_for_all_lags(audio, current_frame,
                                                      lag_range, nccfparam)
 
-    # min_valid_correlation = (max_correlation_val *
-    #                            params.min_acceptable_peak_val)
-    # marked_values[i] = _get_marked_firstpass_results(candidates[i], params,
-    #                                                    min_valid_correlation)
+    # all values that meet certain threshold shall be marked for consideration
+    min_valid_correlation = (all_lag_results[1] *
+                             raptparam.min_acceptable_peak_val)
+    marked_values = _get_marked_firstpass_results(all_lag_results[0], raptparam,
+                                                  min_valid_correlation)
     return all_lag_results
 
 
@@ -232,7 +236,7 @@ def _get_correlations_for_all_lags(audio, current_frame, lag_range, nccfparam):
 
 def _get_marked_firstpass_results(candidates_for_frame, params,
                                   min_valid_correlation):
-    return 0
+    return 0.0
 
 
 def _get_correlation(audio, frame, lag, nccfparam):
