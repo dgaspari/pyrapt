@@ -19,6 +19,8 @@ class TestMainRaptMethods(TestCase):
         with patch('pyrapt.pyrapt._get_downsampled_audio') as mock_downsample:
             mock_downsample.return_value = (2004, numpy.full(10, 2.0))
             with patch('pyrapt.pyrapt._run_nccf') as mock_get_nccf:
-                mock_get_nccf.return_value = (numpy.zeros((10, 10)), 0.5)
-                x, y = pyrapt.rapt('test.wav')
-                self.assertEqual(0.5, y)
+                mock_get_nccf.return_value = [([0.2] * 35, 0.3)] * 166
+                results = pyrapt.rapt('test.wav')
+                self.assertEqual(166, len(results))
+                self.assertEqual(35, len(results[0][0]))
+                self.assertEqual(0.3, results[165][1])

@@ -15,13 +15,14 @@ class TestNccfMethods(TestCase):
 
     @patch('pyrapt.pyrapt._first_pass_nccf')
     def test_run_nccf(self, mock_first_pass):
-        mock_first_pass.return_value = (77.0, 22.0)
+        mock_first_pass.return_value = [([0.2] * 35, 0.3)] * 166
         downsampled_audio = (10, numpy.array([0, 1, 2, 3]))
         original_audio = (100, numpy.array([0, 1, 2, 3, 4, 5, 6]))
         params = raptparams.Raptparams()
-        x, y = pyrapt._run_nccf(downsampled_audio, original_audio, params)
-        self.assertEqual(77.0, x)
-        self.assertEqual(22.0, y)
+        results = pyrapt._run_nccf(downsampled_audio, original_audio, params)
+        self.assertEqual(166, len(results))
+        self.assertEqual(35, len(results[0][0]))
+        self.assertEqual(0.3, results[165][1])
 
     def test_get_nccfparams(self):
         audio_input = (10, numpy.zeros(60))
@@ -44,14 +45,15 @@ class TestNccfMethods(TestCase):
 
     @patch('pyrapt.pyrapt._get_firstpass_frame_results')
     def test_nccf_return_dimensions(self, mock_frame_results):
-        mock_frame_results.return_value = numpy.zeros(35), 0.5
+        mock_frame_results.return_value = [0.0] * 35, 0.5
         # TODO: This is with default params. Do it with passed in ones as well
         sample_rate = 2004
         audio_data = numpy.full(3346, 5.0)
         params = raptparams.Raptparams()
-        candidates, max_corr = pyrapt._first_pass_nccf((sample_rate,
-                                                        audio_data), params)
-        self.assertEqual((166, 35), candidates.shape)
+        candidates = pyrapt._first_pass_nccf((sample_rate, audio_data), params)
+        self.assertEqual(166, len(candidates))
+        self.assertEqual(35, len(candidates[0][0]))
+        self.assertEqual(0.5, candidates[34][1])
 
     # TODO: test logic where we avoid lags that exceed sample array len
     @patch('pyrapt.pyrapt._get_correlation')

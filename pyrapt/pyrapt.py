@@ -4,7 +4,7 @@ based on David Talkin's Robust Algorithm for Pitch Tracking (RAPT).
 """
 
 import math
-import numpy
+# import numpy
 from scipy import signal
 from scipy.io import wavfile
 
@@ -26,7 +26,7 @@ def rapt(wavfile_path, **kwargs):
     downsampled_audio = _get_downsampled_audio(original_audio,
                                                params.maximum_allowed_freq)
 
-    first_pass, max_cor = _run_nccf(downsampled_audio, original_audio, params)
+    first_pass = _run_nccf(downsampled_audio, original_audio, params)
 
     # NCCF (normalized cross correlation function) - identify F0 candidates
     # TODO: Determine if we want to preprocess audio before NCCF
@@ -38,7 +38,7 @@ def rapt(wavfile_path, **kwargs):
     # Dynamic programming - determine voicing state at each period candidate
 
     # return output of nccf for now
-    return first_pass, max_cor
+    return first_pass
 
 
 def _setup_rapt_params(kwargs):
@@ -129,11 +129,11 @@ def _calculate_downsampling_rate(initial_sampling_rate, maximum_f0):
 
 
 def _run_nccf(downsampled_audio, original_audio, params):
-    first_pass, max_cor = _first_pass_nccf(downsampled_audio, params)
+    first_pass = _first_pass_nccf(downsampled_audio, params)
 
     # run second pass
 
-    return first_pass, max_cor
+    return first_pass
 
 
 def _first_pass_nccf(audio, params):
@@ -152,7 +152,7 @@ def _first_pass_nccf(audio, params):
     # NOTE: Because we are using max_frame_count exclusively for array size,
     # we do not run into issues with using xrange to iterate thru each frame, i
 
-    candidates = numpy.zeros((nccfparam.max_frame_count, lag_range))
+    candidates = [None] * nccfparam.max_frame_count
 
     # NOTE: We also, likewise, use max_hypotheses - 1 for array size so it is
     # ok to use it for xrange:
@@ -161,10 +161,10 @@ def _first_pass_nccf(audio, params):
     #                             params.max_hypotheses_per_frame - 1))
 
     for i in xrange(0, nccfparam.max_frame_count):
-        candidates[i], max_correlation_val = _get_firstpass_frame_results(
+        candidates[i] = _get_firstpass_frame_results(
             audio, i, lag_range, nccfparam)
 
-    return candidates, max_correlation_val
+    return candidates
 
 
 def _get_nccf_params(audio_input, raptparams, is_firstpass):
@@ -196,7 +196,7 @@ def _get_nccf_params(audio_input, raptparams, is_firstpass):
 
 def _get_firstpass_frame_results(audio, current_frame, lag_range, nccfparam):
     # Value of theta_max in NCCF equation, max for the current frame
-    candidates = numpy.zeros(lag_range)
+    candidates = [0.0] * lag_range
     max_correlation_val = 0.0
     for k in xrange(0, lag_range):
         current_lag = k + nccfparam.shortest_lag_per_frame
@@ -205,14 +205,17 @@ def _get_firstpass_frame_results(audio, current_frame, lag_range, nccfparam):
         # end of the audio sample - if so - skip and set val to 0
         if ((current_lag + (nccfparam.samples_correlated_per_lag - 1)
              + (current_frame * nccfparam.samples_per_frame)) >= audio[1].size):
-            candidates[k] = 0
+            # candidates[k] = 0.0
+            # TODO: Verify this behavior in unit test - no need to set val
+            # since 0.0 is default
             continue
 
-        candidates[k] = _get_correlation(audio, current_frame, current_lag,
-                                         nccfparam)
+        candidates[k] = _get_correlation(audio, current_frame,
+                                         current_lag, nccfparam)
 
         if candidates[k] > max_correlation_val:
             max_correlation_val = candidates[k]
+
     # min_valid_correlation = (max_correlation_val *
     #                            params.min_acceptable_peak_val)
     # marked_values[i] = _get_marked_firstpass_results(candidates[i], params,
