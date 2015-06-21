@@ -55,9 +55,23 @@ class TestNccfMethods(TestCase):
         self.assertEqual(35, len(candidates[0][0]))
         self.assertEqual(0.5, candidates[34][1])
 
+    @patch('pyrapt.pyrapt._get_correlations_for_all_lags')
+    def test_get_results_for_frame(self, mock_get_for_all_lags):
+        mock_get_for_all_lags.return_value = ([0.2] * 35, 0.3)
+        audio = (2004, numpy.full(3346, 5.0))
+        params = nccfparams.Nccfparams()
+        params.samples_correlated_per_lag = 20
+        params.samples_per_frame = 20
+        params.shortest_lag_per_frame = 10
+        lag_range = 8
+        results = pyrapt._get_firstpass_frame_results(audio, 5,
+                                                      lag_range, params)
+        self.assertEqual(35, len(results[0]))
+        self.assertEqual(0.3, results[1])
+
     # TODO: test logic where we avoid lags that exceed sample array len
     @patch('pyrapt.pyrapt._get_correlation')
-    def test_get_results_for_frame(self, mock_get_correlation):
+    def test_get_correlations_for_all_lags(self, mock_get_correlation):
         mock_get_correlation.return_value = 0.4
         audio = (2004, numpy.full(3346, 5.0))
         params = nccfparams.Nccfparams()
@@ -65,11 +79,11 @@ class TestNccfMethods(TestCase):
         params.samples_per_frame = 20
         params.shortest_lag_per_frame = 10
         lag_range = 8
-        candidates, max_val = pyrapt._get_firstpass_frame_results(
-            audio, 5, lag_range, params)
-        self.assertEqual(0.4, max_val)
-        self.assertEqual(8, len(candidates))
-        self.assertEqual(0.4, candidates[7])
+        results = pyrapt._get_correlations_for_all_lags(audio, 5,
+                                                        lag_range, params)
+        self.assertEqual(0.4, results[1])
+        self.assertEqual(8, len(results[0]))
+        self.assertEqual(0.4, results[0][7])
 
     # TODO: have variable return values for mocks depending on inputs
     # TODO: verify inputs came in as expected:
