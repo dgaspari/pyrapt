@@ -195,11 +195,8 @@ def _get_firstpass_frame_results(audio, current_frame, lag_range,
     all_lag_results = _get_correlations_for_all_lags(audio, current_frame,
                                                      lag_range, nccfparam)
 
-    # all values that meet certain threshold shall be marked for consideration
-    min_valid_correlation = (all_lag_results[1] *
-                             raptparam.min_acceptable_peak_val)
-    marked_values = _get_marked_firstpass_results(all_lag_results[0], raptparam,
-                                                  min_valid_correlation)
+    marked_values = _get_marked_firstpass_results(all_lag_results, raptparam,
+                                                  nccfparam)
     return all_lag_results
 
 
@@ -228,14 +225,16 @@ def _get_correlations_for_all_lags(audio, current_frame, lag_range, nccfparam):
     return (candidates, max_correlation_val)
 
 
-def _get_marked_firstpass_results(candidates_for_frame, nccfparam,
-                                  min_valid_correlation):
+def _get_marked_firstpass_results(lag_results, raptparam, nccfparam):
+    # values that meet certain threshold shall be marked for consideration
+    min_valid_correlation = (lag_results[1] * raptparam.min_acceptable_peak_val)
+
     candidates_for_interpolation = []
-    for k, k_val in enumerate(candidates_for_frame):
+    for k, k_val in enumerate(lag_results[0]):
         current_lag = k + nccfparam.shortest_lag_per_frame
         if k_val >= min_valid_correlation:
             candidates_for_interpolation.append((current_lag, k_val))
-    return 0.0
+    return candidates_for_interpolation
 
 
 def _get_correlation(audio, frame, lag, nccfparam):
