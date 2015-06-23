@@ -91,15 +91,29 @@ class TestNccfMethods(TestCase):
         self.assertEqual(0.4, results[0][7])
 
     def test_get_marked_firstpass_results(self):
-        candidates = ([0.5, 0.2, 0.6, 0.8], 1.0)
+        candidates = ([0.7, 0.2, 0.6, 0.8], 1.0)
         nccfparam = nccfparams.Nccfparams()
         nccfparam.shortest_lag_per_frame = 7
         raptparam = raptparams.Raptparams()
         raptparam.min_acceptable_peak_val = 0.5
+        raptparam.max_hypotheses_per_frame = 19
         marked_values = pyrapt._get_marked_firstpass_results(
             candidates, raptparam, nccfparam)
         self.assertEqual(3, len(marked_values))
         self.assertEqual((9, 0.6), marked_values[1])
+
+    def test_get_makred_firstpass_results_above_max(self):
+        candidates = ([0.7, 0.2, 0.6, 0.8, 0.9, 0.5], 1.0)
+        nccfparam = nccfparams.Nccfparams()
+        nccfparam.shortest_lag_per_frame = 7
+        raptparam = raptparams.Raptparams()
+        raptparam.min_acceptable_peak_val = 0.5
+        raptparam.max_hypotheses_per_frame = 5
+        marked_values = pyrapt._get_marked_firstpass_results(
+            candidates, raptparam, nccfparam)
+        self.assertEqual(4, len(marked_values))
+        self.assertEqual((11, 0.9), marked_values[0])
+        self.assertEqual((10, 0.8), marked_values[1])
 
     # TODO: have variable return values for mocks depending on inputs
     # TODO: verify inputs came in as expected:

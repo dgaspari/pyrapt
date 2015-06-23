@@ -228,19 +228,20 @@ def _get_correlations_for_all_lags(audio, current_frame, lag_range, nccfparam):
 def _get_marked_firstpass_results(lag_results, raptparam, nccfparam):
     # values that meet certain threshold shall be marked for consideration
     min_valid_correlation = (lag_results[1] * raptparam.min_acceptable_peak_val)
+    max_allowed_candidates = raptparam.max_hypotheses_per_frame - 1
 
-    candidates_for_interpolation = []
+    candidates = []
     for k, k_val in enumerate(lag_results[0]):
         current_lag = k + nccfparam.shortest_lag_per_frame
         if k_val >= min_valid_correlation:
-            candidates_for_interpolation.append((current_lag, k_val))
+            candidates.append((current_lag, k_val))
+
     # now check to see if selected candidates exceed max allowed:
-    if len(candidates_for_interpolation) > raptparam.max_hypotheses_per_frame:
-        candidates_for_interpolation.sort(key=lambda tup: tup[1], reverse=True)
-        returned_candidates = candidates_for_interpolation[
-            0:raptparam.max_hypotheses_per_frame]
+    if len(candidates) > max_allowed_candidates:
+        candidates.sort(key=lambda tup: tup[1], reverse=True)
+        returned_candidates = candidates[0:max_allowed_candidates]
     else:
-        returned_candidates = candidates_for_interpolation
+        returned_candidates = candidates
 
     return returned_candidates
 
