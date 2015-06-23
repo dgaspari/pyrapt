@@ -234,7 +234,15 @@ def _get_marked_firstpass_results(lag_results, raptparam, nccfparam):
         current_lag = k + nccfparam.shortest_lag_per_frame
         if k_val >= min_valid_correlation:
             candidates_for_interpolation.append((current_lag, k_val))
-    return candidates_for_interpolation
+    # now check to see if selected candidates exceed max allowed:
+    if len(candidates_for_interpolation) > raptparam.max_hypotheses_per_frame:
+        candidates_for_interpolation.sort(key=lambda tup: tup[1], reverse=True)
+        returned_candidates = candidates_for_interpolation[
+            0:raptparam.max_hypotheses_per_frame]
+    else:
+        returned_candidates = candidates_for_interpolation
+
+    return returned_candidates
 
 
 def _get_correlation(audio, frame, lag, nccfparam):
