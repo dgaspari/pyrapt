@@ -197,7 +197,7 @@ def _get_firstpass_frame_results(audio, current_frame, lag_range,
 
     marked_values = _get_marked_firstpass_results(all_lag_results, raptparam,
                                                   nccfparam)
-    return all_lag_results
+    return marked_values
 
 
 def _get_correlations_for_all_lags(audio, current_frame, lag_range, nccfparam):

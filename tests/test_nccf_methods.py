@@ -45,16 +45,16 @@ class TestNccfMethods(TestCase):
         self.assertEqual(2, second_params.max_frame_count)
 
     @patch('pyrapt.pyrapt._get_firstpass_frame_results')
-    def test_nccf_return_dimensions(self, mock_frame_results):
-        mock_frame_results.return_value = [0.0] * 35, 0.5
+    def test_nccf_firstpass(self, mock_frame_results):
+        mock_frame_results.return_value = [(8, 0.7), (12, 0.8), (21, 0.6)]
         # TODO: This is with default params. Do it with passed in ones as well
         sample_rate = 2004
         audio_data = numpy.full(3346, 5.0)
         params = raptparams.Raptparams()
         candidates = pyrapt._first_pass_nccf((sample_rate, audio_data), params)
         self.assertEqual(166, len(candidates))
-        self.assertEqual(35, len(candidates[0][0]))
-        self.assertEqual(0.5, candidates[34][1])
+        self.assertEqual(3, len(candidates[0]))
+        self.assertEqual(0.8, candidates[34][1][1])
 
     @patch('pyrapt.pyrapt._get_correlations_for_all_lags')
     def test_get_results_for_frame(self, mock_get_for_all_lags):
@@ -62,17 +62,14 @@ class TestNccfMethods(TestCase):
         audio = (2004, numpy.full(3346, 5.0))
         raptparam = raptparams.Raptparams()
         params = nccfparams.Nccfparams()
-        params.samples_correlated_per_lag = 20
-        params.samples_per_frame = 20
-        params.shortest_lag_per_frame = 10
         lag_range = 8
         with patch('pyrapt.pyrapt._get_marked_firstpass_results') as mock_mark:
-            mock_mark.return_value = 0
+            mock_mark.return_value = [(9, 0.7), (15, 0.8), (17, 0.6)]
             results = pyrapt._get_firstpass_frame_results(audio, 5, lag_range,
                                                           params, raptparam)
             mock_mark.assert_called_once_with(ANY, ANY, ANY)
-            self.assertEqual(35, len(results[0]))
-            self.assertEqual(0.3, results[1])
+            self.assertEqual(3, len(results))
+            self.assertEqual(0.8, results[1][1])
 
     # TODO: test logic where we avoid lags that exceed sample array len
     @patch('pyrapt.pyrapt._get_correlation')
