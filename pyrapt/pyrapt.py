@@ -132,8 +132,9 @@ def _run_nccf(downsampled_audio, original_audio, params):
     first_pass = _first_pass_nccf(downsampled_audio, params)
 
     # run second pass
+    second_pass = _second_pass_nccf(original_audio, first_pass, params)
 
-    return first_pass
+    return second_pass
 
 
 def _first_pass_nccf(audio, params):
@@ -161,6 +162,25 @@ def _first_pass_nccf(audio, params):
     return candidates
 
 
+def _second_pass_nccf(original_audio, first_pass, params):
+    # Runs NCCF on original audio, but only for lags highlighted from first
+    # pass results. Will output the finalized F0 candidates for each frame
+
+    nccfparam = _get_nccf_params(original_audio, params, False)
+
+    # Difference between "K-1" and the starting value of "k"
+    lag_range = ((nccfparam.longest_lag_per_frame - 1) -
+                 nccfparam.shortest_lag_per_frame)
+
+    candidates = [None] * nccfparam.max_frame_count
+
+    for i in xrange(0, nccfparam.max_frame_count):
+        candidates[i] = _get_secondpass_frame_results(
+            original_audio, i, lag_range, nccfparam, params, first_pass)
+
+    return candidates
+
+
 def _get_nccf_params(audio_input, raptparams, is_firstpass):
     """
     Creates and returns nccfparams object w/ nccf-specific values
@@ -184,7 +204,6 @@ def _get_nccf_params(audio_input, raptparams, is_firstpass):
     # Value of "M-1" in NCCF equation:
     nccfparam.max_frame_count = (int(float(len(audio_input[1])) /
                                  float(nccfparam.samples_per_frame)) - 1)
-
     return nccfparam
 
 
@@ -198,6 +217,11 @@ def _get_firstpass_frame_results(audio, current_frame, lag_range,
     marked_values = _get_marked_firstpass_results(all_lag_results, raptparam,
                                                   nccfparam)
     return marked_values
+
+
+def _get_secondpass_frame_results(audio, current_frame, lag_range, nccfparam,
+                                  raptparam, first_pass):
+    return first_pass[0]
 
 
 def _get_correlations_for_all_lags(audio, current_frame, lag_range, nccfparam):
