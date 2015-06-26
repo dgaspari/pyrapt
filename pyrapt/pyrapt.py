@@ -221,7 +221,13 @@ def _get_firstpass_frame_results(audio, current_frame, lag_range,
 
 def _get_secondpass_frame_results(audio, current_frame, lag_range, nccfparam,
                                   raptparam, first_pass):
-    return first_pass[0]
+    lag_results = _get_correlations_for_input_lags(audio, current_frame,
+                                                   first_pass,  lag_range,
+                                                   nccfparam)
+
+    marked_values = _get_marked_firstpass_results(lag_results,
+                                                  raptparam, nccfparam)
+    return marked_values
 
 
 def _get_correlations_for_all_lags(audio, current_frame, lag_range, nccfparam):
@@ -249,6 +255,29 @@ def _get_correlations_for_all_lags(audio, current_frame, lag_range, nccfparam):
     return (candidates, max_correlation_val)
 
 
+def _get_correlations_for_input_lags(audio, current_frame, first_pass,
+                                     lag_range, nccfparam):
+    candidates = [0.0] * lag_range
+    max_correlation_val = 0.0
+    for lag_val in first_pass:
+        k = lag_val[0]
+
+        # determine if the current lag value causes us to go past the
+        # end of the audio sample - if so - skip and set val to 0
+        if ((k + (nccfparam.samples_correlated_per_lag - 1)
+             + (current_frame * nccfparam.samples_per_frame)) >= audio[1].size):
+            # TODO: Verify this behavior in unit test - no need to set val
+            # since 0.0 is default
+            continue
+
+        candidates[k] = _get_correlation(audio, current_frame, k, nccfparam)
+        if candidates[k] > max_correlation_val:
+            max_correlation_val = candidates[k]
+
+    return (candidates, max_correlation_val)
+
+
+# TODO: this can be used for 2nd pass - use parameter to decide 1stpass run?
 def _get_marked_firstpass_results(lag_results, raptparam, nccfparam):
     # values that meet certain threshold shall be marked for consideration
     min_valid_correlation = (lag_results[1] * raptparam.min_acceptable_peak_val)
