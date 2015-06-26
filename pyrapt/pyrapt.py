@@ -259,7 +259,8 @@ def _get_correlations_for_input_lags(audio, current_frame, first_pass,
                                      lag_range, nccfparam):
     candidates = [0.0] * lag_range
     max_correlation_val = 0.0
-    for lag_val in first_pass:
+    print(first_pass[current_frame])
+    for lag_val in first_pass[current_frame]:
         k = lag_val[0]
 
         # determine if the current lag value causes us to go past the
@@ -270,6 +271,7 @@ def _get_correlations_for_input_lags(audio, current_frame, first_pass,
             # since 0.0 is default
             continue
 
+        # TODO: Need to pass opt parameter to add A_FACT to denom here:
         candidates[k] = _get_correlation(audio, current_frame, k, nccfparam)
         if candidates[k] > max_correlation_val:
             max_correlation_val = candidates[k]
@@ -301,6 +303,7 @@ def _get_marked_firstpass_results(lag_results, raptparam, nccfparam):
     return returned_candidates
 
 
+# TODO: Need opt parameter to introduce A_FACT to denominator values
 def _get_correlation(audio, frame, lag, nccfparam):
     samples = 0
     # NOTE: NCCF formula has inclusive summation from 0 to n-1, but must add
