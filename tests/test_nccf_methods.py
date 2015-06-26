@@ -138,8 +138,9 @@ class TestNccfMethods(TestCase):
         marked_values = pyrapt._get_marked_firstpass_results(
             candidates, raptparam, nccfparam)
         self.assertEqual(4, len(marked_values))
-        self.assertEqual((11, 0.9), marked_values[0])
-        self.assertEqual((10, 0.8), marked_values[1])
+        self.assertEqual((7, 0.7), marked_values[0])
+        self.assertEqual((11, 0.9), marked_values[3])
+        self.assertEqual((10, 0.8), marked_values[2])
 
     # TODO: have variable return values for mocks depending on inputs
     # TODO: verify inputs came in as expected:

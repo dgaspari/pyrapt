@@ -264,6 +264,8 @@ def _get_marked_firstpass_results(lag_results, raptparam, nccfparam):
     if len(candidates) > max_allowed_candidates:
         candidates.sort(key=lambda tup: tup[1], reverse=True)
         returned_candidates = candidates[0:max_allowed_candidates]
+        # re-sort before returning so that it is in order of low to highest k
+        returned_candidates.sort(key=lambda tup: tup[0])
     else:
         returned_candidates = candidates
 
