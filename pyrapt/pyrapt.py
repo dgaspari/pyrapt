@@ -214,10 +214,9 @@ def _get_firstpass_frame_results(audio, current_frame, lag_range, params):
     # calculate correlation (theta) for all lags, and get the highest
     # correlation val (theta_max) from the calculated lags:
     all_lag_results = _get_correlations_for_all_lags(audio, current_frame,
-                                                     lag_range, params[1])
+                                                     lag_range, params)
 
-    marked_values = _get_marked_firstpass_results(all_lag_results, params[0],
-                                                  params[1])
+    marked_values = _get_marked_firstpass_results(all_lag_results, params)
     return marked_values
 
 
@@ -232,24 +231,24 @@ def _get_secondpass_frame_results(audio, current_frame, lag_range, params,
     return marked_values
 
 
-def _get_correlations_for_all_lags(audio, current_frame, lag_range, nccfparam):
+def _get_correlations_for_all_lags(audio, current_frame, lag_range, params):
     # Value of theta_max in NCCF equation, max for the current frame
     candidates = [0.0] * lag_range
     max_correlation_val = 0.0
     for k in xrange(0, lag_range):
-        current_lag = k + nccfparam.shortest_lag_per_frame
+        current_lag = k + params[1].shortest_lag_per_frame
 
         # determine if the current lag value causes us to go past the
         # end of the audio sample - if so - skip and set val to 0
-        if ((current_lag + (nccfparam.samples_correlated_per_lag - 1)
-             + (current_frame * nccfparam.samples_per_frame)) >= audio[1].size):
+        if ((current_lag + (params[1].samples_correlated_per_lag - 1)
+             + (current_frame * params[1].samples_per_frame)) >= audio[1].size):
             # candidates[k] = 0.0
             # TODO: Verify this behavior in unit test - no need to set val
             # since 0.0 is default
             continue
 
         candidates[k] = _get_correlation(audio, current_frame,
-                                         current_lag, nccfparam)
+                                         current_lag, params[1])
 
         if candidates[k] > max_correlation_val:
             max_correlation_val = candidates[k]
@@ -282,14 +281,14 @@ def _get_correlations_for_input_lags(audio, current_frame, first_pass,
 
 
 # TODO: this can be used for 2nd pass - use parameter to decide 1stpass run?
-def _get_marked_firstpass_results(lag_results, raptparam, nccfparam):
+def _get_marked_firstpass_results(lag_results, params):
     # values that meet certain threshold shall be marked for consideration
-    min_valid_correlation = (lag_results[1] * raptparam.min_acceptable_peak_val)
-    max_allowed_candidates = raptparam.max_hypotheses_per_frame - 1
+    min_valid_correlation = (lag_results[1] * params[0].min_acceptable_peak_val)
+    max_allowed_candidates = params[0].max_hypotheses_per_frame - 1
 
     candidates = []
     for k, k_val in enumerate(lag_results[0]):
-        current_lag = k + nccfparam.shortest_lag_per_frame
+        current_lag = k + params[1].shortest_lag_per_frame
         if k_val >= min_valid_correlation:
             candidates.append((current_lag, k_val))
 
