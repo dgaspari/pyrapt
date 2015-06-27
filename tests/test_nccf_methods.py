@@ -166,7 +166,7 @@ class TestNccfMethods(TestCase):
         with patch('pyrapt.pyrapt._get_sample') as mock_sample:
             mock_sample.return_value = 4.0
             correlation = pyrapt._get_correlation(audio, 0, 0, params)
-            self.assertEqual(20.0, correlation)
+            self.assertEqual(40.0, correlation)
 
     def test_get_sample(self):
         param = nccfparams.Nccfparams()

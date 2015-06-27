@@ -312,9 +312,11 @@ def _get_correlation(audio, frame, lag, params):
         samples_for_lag = _get_sample(audio, frame, j + lag, params[1])
         samples += correlated_samples * samples_for_lag
 
-    denominator = _get_nccf_denominator_val(audio, frame, 0, params[1])
+    denominator_base = _get_nccf_denominator_val(audio, frame, 0, params[1])
 
-    denominator *= _get_nccf_denominator_val(audio, frame, lag, params[1])
+    denominator_lag = _get_nccf_denominator_val(audio, frame, lag, params[1])
+
+    denominator = math.sqrt(denominator_base * denominator_lag)
 
     return float(samples) / float(denominator)
 
