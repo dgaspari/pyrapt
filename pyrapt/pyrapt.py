@@ -226,8 +226,7 @@ def _get_secondpass_frame_results(audio, current_frame, lag_range, params,
                                                    first_pass,  lag_range,
                                                    params[1])
 
-    marked_values = _get_marked_firstpass_results(lag_results,
-                                                  params[0], params[1])
+    marked_values = _get_marked_firstpass_results(lag_results, params)
     return marked_values
 
 
