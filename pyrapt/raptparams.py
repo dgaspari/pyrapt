@@ -26,3 +26,6 @@ class Raptparams:
 
         # Value of "CAND_TR" in NCCF equation:
         self.min_acceptable_peak_val = 0.3
+
+        # Value of A_FACT" in NCCF equation:
+        self.additive_constant = 10000

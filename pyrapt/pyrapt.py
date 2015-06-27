@@ -58,7 +58,8 @@ def _setup_rapt_params(kwargs):
                 params.max_hypotheses_per_frame = value
             if key == 'min_acceptable_peak_val':
                 params.min_acceptable_peak_val = value
-
+            if key == 'additive_constant':
+                params.additive_constant = value
     return params
 
 
