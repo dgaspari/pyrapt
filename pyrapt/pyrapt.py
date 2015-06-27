@@ -222,12 +222,12 @@ def _get_firstpass_frame_results(audio, current_frame, lag_range, params):
 
 def _get_secondpass_frame_results(audio, current_frame, lag_range, params,
                                   first_pass):
+
     lag_results = _get_correlations_for_input_lags(audio, current_frame,
                                                    first_pass,  lag_range,
-                                                   params[1])
+                                                   params)
 
-    marked_values = _get_marked_firstpass_results(lag_results,
-                                                  params[0], params[1])
+    marked_values = _get_marked_firstpass_results(lag_results, params)
     return marked_values
 
 
@@ -257,23 +257,22 @@ def _get_correlations_for_all_lags(audio, current_frame, lag_range, params):
 
 
 def _get_correlations_for_input_lags(audio, current_frame, first_pass,
-                                     lag_range, nccfparam):
+                                     lag_range, params):
     candidates = [0.0] * lag_range
     max_correlation_val = 0.0
-    print(first_pass[current_frame])
     for lag_val in first_pass[current_frame]:
         k = lag_val[0]
 
         # determine if the current lag value causes us to go past the
         # end of the audio sample - if so - skip and set val to 0
-        if ((k + (nccfparam.samples_correlated_per_lag - 1)
-             + (current_frame * nccfparam.samples_per_frame)) >= audio[1].size):
+        if ((k + (params[1].samples_correlated_per_lag - 1)
+             + (current_frame * params[1].samples_per_frame)) >= audio[1].size):
             # TODO: Verify this behavior in unit test - no need to set val
             # since 0.0 is default
             continue
 
         # TODO: Need to pass opt parameter to add A_FACT to denom here:
-        candidates[k] = _get_correlation(audio, current_frame, k, nccfparam)
+        candidates[k] = _get_correlation(audio, current_frame, k, params[1])
         if candidates[k] > max_correlation_val:
             max_correlation_val = candidates[k]
 

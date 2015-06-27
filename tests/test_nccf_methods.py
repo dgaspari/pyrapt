@@ -121,10 +121,10 @@ class TestNccfMethods(TestCase):
     def test_get_correlations_for_input_lags(self, mock_get_correlation):
         mock_get_correlation.return_value = 0.8
         audio = (2004, numpy.full(3346, 5.0))
-        params = nccfparams.Nccfparams()
-        params.samples_correlated_per_lag = 20
-        params.samples_per_frame = 20
-        params.shortest_lag_per_frame = 0
+        params = (raptparams.Raptparams(), nccfparams.Nccfparams())
+        params[1].samples_correlated_per_lag = 20
+        params[1].samples_per_frame = 20
+        params[1].shortest_lag_per_frame = 0
         lag_range = 20
         first_pass = [[(8, 0.7)]] * 20
         results = pyrapt._get_correlations_for_input_lags(audio, 5, first_pass,
