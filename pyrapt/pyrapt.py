@@ -18,15 +18,15 @@ def rapt(wavfile_path, **kwargs):
     pitch of an audio sample.
     """
     # Process optional keyword args and build out rapt params
-    params = _setup_rapt_params(kwargs)
+    raptparam = _setup_rapt_params(kwargs)
 
     # TODO: Flesh out docstring, describe args, expected vals in kwargs
     original_audio = _get_audio_data(wavfile_path)
 
     downsampled_audio = _get_downsampled_audio(original_audio,
-                                               params.maximum_allowed_freq)
+                                               raptparam.maximum_allowed_freq)
 
-    first_pass = _run_nccf(downsampled_audio, original_audio, params)
+    first_pass = _run_nccf(downsampled_audio, original_audio, raptparam)
 
     # NCCF (normalized cross correlation function) - identify F0 candidates
     # TODO: Determine if we want to preprocess audio before NCCF
@@ -129,55 +129,57 @@ def _calculate_downsampling_rate(initial_sampling_rate, maximum_f0):
 # TODO: Consider moving nccf functions into a separate module / file?
 
 
-def _run_nccf(downsampled_audio, original_audio, params):
-    first_pass = _first_pass_nccf(downsampled_audio, params)
+def _run_nccf(downsampled_audio, original_audio, raptparam):
+    first_pass = _first_pass_nccf(downsampled_audio, raptparam)
 
     # run second pass
-    second_pass = _second_pass_nccf(original_audio, first_pass, params)
+    second_pass = _second_pass_nccf(original_audio, first_pass, raptparam)
 
     return second_pass
 
 
-def _first_pass_nccf(audio, params):
+def _first_pass_nccf(audio, raptparam):
     # Runs normalized cross correlation function (NCCF) on downsampled audio,
     # outputting a set of potential F0 candidates that could be used to
     # determine the pitch at each given frame of the audio sample.
 
-    nccfparam = _get_nccf_params(audio, params, True)
+    nccfparam = _get_nccf_params(audio, raptparam, True)
+    params = (raptparam, nccfparam)
 
     # Difference between "K-1" and starting value of "k"
-    lag_range = ((nccfparam.longest_lag_per_frame - 1) -
-                 nccfparam.shortest_lag_per_frame)
+    lag_range = ((params[1].longest_lag_per_frame - 1) -
+                 params[1].shortest_lag_per_frame)
 
     # TODO: Re-read discussion of using double-precision arithmetic in rapt 3.3
 
     # NOTE: Because we are using max_frame_count exclusively for array size,
     # we do not run into issues with using xrange to iterate thru each frame, i
 
-    candidates = [None] * nccfparam.max_frame_count
+    candidates = [None] * params[1].max_frame_count
 
-    for i in xrange(0, nccfparam.max_frame_count):
+    for i in xrange(0, params[1].max_frame_count):
         candidates[i] = _get_firstpass_frame_results(
-            audio, i, lag_range, nccfparam, params)
+            audio, i, lag_range, params)
 
     return candidates
 
 
-def _second_pass_nccf(original_audio, first_pass, params):
+def _second_pass_nccf(original_audio, first_pass, raptparam):
     # Runs NCCF on original audio, but only for lags highlighted from first
     # pass results. Will output the finalized F0 candidates for each frame
 
-    nccfparam = _get_nccf_params(original_audio, params, False)
+    nccfparam = _get_nccf_params(original_audio, raptparam, False)
+    params = (raptparam, nccfparam)
 
     # Difference between "K-1" and the starting value of "k"
-    lag_range = ((nccfparam.longest_lag_per_frame - 1) -
-                 nccfparam.shortest_lag_per_frame)
+    lag_range = ((params[1].longest_lag_per_frame - 1) -
+                 params[1].shortest_lag_per_frame)
 
-    candidates = [None] * nccfparam.max_frame_count
+    candidates = [None] * params[1].max_frame_count
 
-    for i in xrange(0, nccfparam.max_frame_count):
+    for i in xrange(0, params[1].max_frame_count):
         candidates[i] = _get_secondpass_frame_results(
-            original_audio, i, lag_range, nccfparam, params, first_pass)
+            original_audio, i, lag_range, params, first_pass)
 
     return candidates
 
@@ -208,26 +210,25 @@ def _get_nccf_params(audio_input, raptparams, is_firstpass):
     return nccfparam
 
 
-def _get_firstpass_frame_results(audio, current_frame, lag_range,
-                                 nccfparam, raptparam):
+def _get_firstpass_frame_results(audio, current_frame, lag_range, params):
     # calculate correlation (theta) for all lags, and get the highest
     # correlation val (theta_max) from the calculated lags:
     all_lag_results = _get_correlations_for_all_lags(audio, current_frame,
-                                                     lag_range, nccfparam)
+                                                     lag_range, params[1])
 
-    marked_values = _get_marked_firstpass_results(all_lag_results, raptparam,
-                                                  nccfparam)
+    marked_values = _get_marked_firstpass_results(all_lag_results, params[0],
+                                                  params[1])
     return marked_values
 
 
-def _get_secondpass_frame_results(audio, current_frame, lag_range, nccfparam,
-                                  raptparam, first_pass):
+def _get_secondpass_frame_results(audio, current_frame, lag_range, params,
+                                  first_pass):
     lag_results = _get_correlations_for_input_lags(audio, current_frame,
                                                    first_pass,  lag_range,
-                                                   nccfparam)
+                                                   params[1])
 
     marked_values = _get_marked_firstpass_results(lag_results,
-                                                  raptparam, nccfparam)
+                                                  params[0], params[1])
     return marked_values
 
 

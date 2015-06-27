@@ -75,13 +75,12 @@ class TestNccfMethods(TestCase):
     def test_get_results_for_frame(self, mock_get_for_all_lags):
         mock_get_for_all_lags.return_value = ([0.2] * 35, 0.3)
         audio = (2004, numpy.full(3346, 5.0))
-        raptparam = raptparams.Raptparams()
-        params = nccfparams.Nccfparams()
+        params = (raptparams.Raptparams(), nccfparams.Nccfparams())
         lag_range = 8
         with patch('pyrapt.pyrapt._get_marked_firstpass_results') as mock_mark:
             mock_mark.return_value = [(9, 0.7), (15, 0.8), (17, 0.6)]
             results = pyrapt._get_firstpass_frame_results(audio, 5, lag_range,
-                                                          params, raptparam)
+                                                          params)
             mock_mark.assert_called_once_with(ANY, ANY, ANY)
             self.assertEqual(3, len(results))
             self.assertEqual(0.8, results[1][1])
@@ -94,13 +93,11 @@ class TestNccfMethods(TestCase):
             audio = (44100, numpy.full(73612, 7.3))
             i = 5
             lag_range = 5
-            raptparam = raptparams.Raptparams()
-            nccfparam = nccfparams.Nccfparams()
+            params = (raptparams.Raptparams(), nccfparams.Nccfparams())
             first_pass = [(4, 0.5), (5, 0.6), (22, 0.7)] * 165
             frame_results = pyrapt._get_secondpass_frame_results(audio, i,
                                                                  lag_range,
-                                                                 nccfparam,
-                                                                 raptparam,
+                                                                 params,
                                                                  first_pass)
             self.assertEqual(4, frame_results[0][0])
 
