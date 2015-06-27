@@ -270,8 +270,7 @@ def _get_correlations_for_input_lags(audio, current_frame, first_pass,
             # since 0.0 is default
             continue
 
-        # TODO: Need to pass opt parameter to add A_FACT to denom here:
-        candidates[k] = _get_correlation(audio, current_frame, k, params)
+        candidates[k] = _get_correlation(audio, current_frame, k, params, False)
         if candidates[k] > max_correlation_val:
             max_correlation_val = candidates[k]
 
@@ -303,7 +302,7 @@ def _get_marked_firstpass_results(lag_results, params):
 
 
 # TODO: Need opt parameter to introduce A_FACT to denominator values
-def _get_correlation(audio, frame, lag, params):
+def _get_correlation(audio, frame, lag, params, is_firstpass=True):
     samples = 0
     # NOTE: NCCF formula has inclusive summation from 0 to n-1, but must add
     # 1 to max value here due to standard behavior of range/xrange:
@@ -316,7 +315,12 @@ def _get_correlation(audio, frame, lag, params):
 
     denominator_lag = _get_nccf_denominator_val(audio, frame, lag, params[1])
 
-    denominator = math.sqrt(denominator_base * denominator_lag)
+    if is_firstpass:
+        denominator = math.sqrt(denominator_base * denominator_lag)
+    else:
+        denominator = ((denominator_base * denominator_lag) +
+                       params[0].additive_constant)
+        denominator = math.sqrt(denominator)
 
     return float(samples) / float(denominator)
 

@@ -116,6 +116,7 @@ class TestNccfMethods(TestCase):
         self.assertEqual(0.4, results[1])
         self.assertEqual(8, len(results[0]))
         self.assertEqual(0.4, results[0][7])
+        mock_get_correlation.assert_called_with(ANY, ANY, ANY, ANY)
 
     @patch('pyrapt.pyrapt._get_correlation')
     def test_get_correlations_for_input_lags(self, mock_get_correlation):
@@ -129,7 +130,7 @@ class TestNccfMethods(TestCase):
         first_pass = [[(8, 0.7)]] * 20
         results = pyrapt._get_correlations_for_input_lags(audio, 5, first_pass,
                                                           lag_range, params)
-        mock_get_correlation.assert_called_with(ANY, ANY, 8, ANY)
+        mock_get_correlation.assert_called_with(ANY, ANY, 8, ANY, False)
         self.assertEqual(20, len(results[0]))
         self.assertEqual(0.8, results[1])
 
@@ -167,6 +168,11 @@ class TestNccfMethods(TestCase):
             mock_sample.return_value = 4.0
             correlation = pyrapt._get_correlation(audio, 0, 0, params)
             self.assertEqual(40.0, correlation)
+            # Now try with additive constant added in denominator
+            # (only added for 2nd pass NCCF calc)
+            params[0].additive_constant = 12
+            correlation = pyrapt._get_correlation(audio, 0, 0, params, False)
+            self.assertEqual(20.0, correlation)
 
     def test_get_sample(self):
         param = nccfparams.Nccfparams()
