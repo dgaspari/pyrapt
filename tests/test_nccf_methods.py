@@ -24,6 +24,9 @@ class TestNccfMethods(TestCase):
             params = raptparams.Raptparams()
             results = pyrapt._run_nccf(downsampled_audio, original_audio,
                                        params)
+            mock_first_pass.assert_called_once_with(downsampled_audio, params)
+            mock_second_pass.assert_called_once_with(original_audio, ANY,
+                                                     params, 10.0)
             self.assertEqual(166, len(results))
             self.assertEqual(4, results[0][0][0])
             self.assertEqual(0.6, results[165][2][1])
@@ -63,11 +66,14 @@ class TestNccfMethods(TestCase):
     def test_nccf_secondpass(self, mock_frame_results):
         mock_frame_results.return_value = [(5, 0.6), (30, 0.7), (55, 0.9)]
         first_pass = [(4, 0.6), (4, 0.6), (4, 0.6)] * 165
-        sample_rate = 44100
-        audio_data = numpy.full(73612, 6.8)
+        audio_data = (44100, numpy.full(73612, 6.8))
         params = raptparams.Raptparams()
-        candidates = pyrapt._second_pass_nccf((sample_rate, audio_data),
-                                              first_pass, params)
+        candidates = pyrapt._second_pass_nccf(audio_data, first_pass,
+                                              params, 20)
+        # for 2nd pass, with default raptparam and sample rate 44100 - the
+        # lag range is max (44100/50) - 0 = 882
+        mock_frame_results.assert_called_with(audio_data, ANY, ANY, ANY,
+                                              first_pass, 20)
         self.assertEqual(165, len(candidates))
         self.assertEqual(5, candidates[0][0][0])
 
@@ -98,7 +104,7 @@ class TestNccfMethods(TestCase):
             frame_results = pyrapt._get_secondpass_frame_results(audio, i,
                                                                  lag_range,
                                                                  params,
-                                                                 first_pass)
+                                                                 first_pass, 20)
             self.assertEqual(4, frame_results[0][0])
 
     # TODO: test logic where we avoid lags that exceed sample array len

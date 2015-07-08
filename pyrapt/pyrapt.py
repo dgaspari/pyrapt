@@ -26,7 +26,7 @@ def rapt(wavfile_path, **kwargs):
     downsampled_audio = _get_downsampled_audio(original_audio,
                                                raptparam.maximum_allowed_freq)
 
-    first_pass = _run_nccf(downsampled_audio, original_audio, raptparam)
+    nccf_results = _run_nccf(downsampled_audio, original_audio, raptparam)
 
     # NCCF (normalized cross correlation function) - identify F0 candidates
     # TODO: Determine if we want to preprocess audio before NCCF
@@ -38,7 +38,7 @@ def rapt(wavfile_path, **kwargs):
     # Dynamic programming - determine voicing state at each period candidate
 
     # return output of nccf for now
-    return first_pass
+    return nccf_results
 
 
 def _setup_rapt_params(kwargs):
@@ -132,8 +132,11 @@ def _calculate_downsampling_rate(initial_sampling_rate, maximum_f0):
 def _run_nccf(downsampled_audio, original_audio, raptparam):
     first_pass = _first_pass_nccf(downsampled_audio, raptparam)
 
+    sample_rate_ratio = float(original_audio[0]) / float(downsampled_audio[0])
+
     # run second pass
-    second_pass = _second_pass_nccf(original_audio, first_pass, raptparam)
+    second_pass = _second_pass_nccf(original_audio, first_pass, raptparam,
+                                    sample_rate_ratio)
 
     return second_pass
 
@@ -164,7 +167,7 @@ def _first_pass_nccf(audio, raptparam):
     return candidates
 
 
-def _second_pass_nccf(original_audio, first_pass, raptparam):
+def _second_pass_nccf(original_audio, first_pass, raptparam, sample_rate_ratio):
     # Runs NCCF on original audio, but only for lags highlighted from first
     # pass results. Will output the finalized F0 candidates for each frame
 
@@ -179,7 +182,7 @@ def _second_pass_nccf(original_audio, first_pass, raptparam):
 
     for i in xrange(0, params[1].max_frame_count):
         candidates[i] = _get_secondpass_frame_results(
-            original_audio, i, lag_range, params, first_pass)
+            original_audio, i, lag_range, params, first_pass, sample_rate_ratio)
 
     return candidates
 
@@ -221,7 +224,7 @@ def _get_firstpass_frame_results(audio, current_frame, lag_range, params):
 
 
 def _get_secondpass_frame_results(audio, current_frame, lag_range, params,
-                                  first_pass):
+                                  first_pass, sample_rate_ratio):
 
     lag_results = _get_correlations_for_input_lags(audio, current_frame,
                                                    first_pass,  lag_range,
@@ -324,19 +327,6 @@ def _get_correlation(audio, frame, lag, params, is_firstpass=True):
         denominator = math.sqrt(denominator)
 
     return float(samples) / float(denominator)
-
-
-# TODO: at some point start_sample is FURTHER than last_sample_in_frame
-# (when calculating denominator). Why is that? we use m + n - 1 for
-# last sample in frame but that seems off... so just to be clear, when
-# i=165 and k=29, in _get_samples for denominator, we invoke this method w:
-# correlation_index of 33, samples_per_Frame = 20, samples_per_lag = 15, K=40
-# frame_start: 3300
-# start_sample: 3333
-# end_sample: 3353
-# last_sample_in_frame: 3314 <<< heres the problem
-# the mean_for_frame val seems fine, but sum_frame_samples fails because we
-# try and calc sum of input from 3333 to 3314
 
 
 def _get_sample(audio, frame, correlation_index, nccfparam):
