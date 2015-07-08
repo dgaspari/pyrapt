@@ -248,7 +248,7 @@ def _get_correlations_for_all_lags(audio, current_frame, lag_range, params):
             continue
 
         candidates[k] = _get_correlation(audio, current_frame,
-                                         current_lag, params[1])
+                                         current_lag, params)
 
         if candidates[k] > max_correlation_val:
             max_correlation_val = candidates[k]
@@ -271,8 +271,7 @@ def _get_correlations_for_input_lags(audio, current_frame, first_pass,
             # since 0.0 is default
             continue
 
-        # TODO: Need to pass opt parameter to add A_FACT to denom here:
-        candidates[k] = _get_correlation(audio, current_frame, k, params[1])
+        candidates[k] = _get_correlation(audio, current_frame, k, params, False)
         if candidates[k] > max_correlation_val:
             max_correlation_val = candidates[k]
 
@@ -304,18 +303,25 @@ def _get_marked_firstpass_results(lag_results, params):
 
 
 # TODO: Need opt parameter to introduce A_FACT to denominator values
-def _get_correlation(audio, frame, lag, nccfparam):
+def _get_correlation(audio, frame, lag, params, is_firstpass=True):
     samples = 0
     # NOTE: NCCF formula has inclusive summation from 0 to n-1, but must add
     # 1 to max value here due to standard behavior of range/xrange:
-    for j in xrange(0, nccfparam.samples_correlated_per_lag):
-        correlated_samples = _get_sample(audio, frame, j, nccfparam)
-        samples_for_lag = _get_sample(audio, frame, j + lag, nccfparam)
+    for j in xrange(0, params[1].samples_correlated_per_lag):
+        correlated_samples = _get_sample(audio, frame, j, params[1])
+        samples_for_lag = _get_sample(audio, frame, j + lag, params[1])
         samples += correlated_samples * samples_for_lag
 
-    denominator = _get_nccf_denominator_val(audio, frame, 0, nccfparam)
+    denominator_base = _get_nccf_denominator_val(audio, frame, 0, params[1])
 
-    denominator *= _get_nccf_denominator_val(audio, frame, lag, nccfparam)
+    denominator_lag = _get_nccf_denominator_val(audio, frame, lag, params[1])
+
+    if is_firstpass:
+        denominator = math.sqrt(denominator_base * denominator_lag)
+    else:
+        denominator = ((denominator_base * denominator_lag) +
+                       params[0].additive_constant)
+        denominator = math.sqrt(denominator)
 
     return float(samples) / float(denominator)
 
