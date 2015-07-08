@@ -103,7 +103,8 @@ class TestNccfMethods(TestCase):
     @patch('pyrapt.pyrapt._get_correlations_for_input_lags')
     def test_get_second_pass_results_for_frame(self, mock_get_correlations):
         with patch('pyrapt.pyrapt._get_marked_firstpass_results') as mock_res:
-            mock_get_correlations.return_value = ([0.2] * 35, 0.5)
+            mock_return_val = ([0.2] * 35, 0.5)
+            mock_get_correlations.return_value = mock_return_val
             mock_res.return_value = [(4, 0.6), (4, 0.6), (4, 0.6)] * 165
             audio = (44100, numpy.full(73612, 7.3))
             i = 5
@@ -114,6 +115,9 @@ class TestNccfMethods(TestCase):
                                                                  lag_range,
                                                                  params,
                                                                  first_pass, 20)
+            mock_get_correlations.assert_called_once_with(audio, 5, first_pass,
+                                                          5, params, 20)
+            mock_res.assert_called_once_with(mock_return_val, params)
             self.assertEqual(4, frame_results[0][0])
 
     # TODO: test logic where we avoid lags that exceed sample array len
@@ -144,7 +148,7 @@ class TestNccfMethods(TestCase):
         lag_range = 20
         first_pass = [[(8, 0.7)]] * 20
         results = pyrapt._get_correlations_for_input_lags(audio, 5, first_pass,
-                                                          lag_range, params)
+                                                          lag_range, params, 20)
         mock_get_correlation.assert_called_with(ANY, ANY, 8, ANY, False)
         self.assertEqual(20, len(results[0]))
         self.assertEqual(0.8, results[1])

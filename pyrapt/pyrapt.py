@@ -228,7 +228,7 @@ def _get_secondpass_frame_results(audio, current_frame, lag_range, params,
 
     lag_results = _get_correlations_for_input_lags(audio, current_frame,
                                                    first_pass,  lag_range,
-                                                   params)
+                                                   params, sample_rate_ratio)
 
     marked_values = _get_marked_firstpass_results(lag_results, params)
     return marked_values
@@ -260,7 +260,7 @@ def _get_correlations_for_all_lags(audio, current_frame, lag_range, params):
 
 
 def _get_correlations_for_input_lags(audio, current_frame, first_pass,
-                                     lag_range, params):
+                                     lag_range, params, sample_rate_ratio):
     candidates = [0.0] * lag_range
     max_correlation_val = 0.0
     for lag_val in first_pass[current_frame]:
