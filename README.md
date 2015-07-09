@@ -12,4 +12,8 @@ This paper was recommended to me by my advisor as a good vocal pitch tracker I c
 
 This module is currently being developed for use with Python 2.7. Because the scipy/numpy libraries are dependencies, make sure you can obtain and build those packages first (need fortran compiler, python dev packages, and ability to comipile c extensions)
 
+### Misc Notes:
+
+While working on the NCCF portion of RAPT, to save time, I've included a pickle of the nccf output: example\_nccf\_data.p
+To load it up, just import pickle and then call load method like so: ncc\_data = pickle.load(open("example\_nccf\_data.p", "rb"))
 

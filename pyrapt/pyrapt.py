@@ -264,19 +264,23 @@ def _get_correlations_for_input_lags(audio, current_frame, first_pass,
     candidates = [0.0] * lag_range
     max_correlation_val = 0.0
     for lag_val in first_pass[current_frame]:
-        k = lag_val[0]
+        # take lag peak from downsampled audio, adjust so that it is useful
+        # for the audio at the original sampling rate (use sample rate ratio)
+        lag_peak = int(lag_val[0] * sample_rate_ratio)
+        # for each peak check the closest 7 lags
+        for k in xrange(lag_peak - 3, lag_peak + 4):
+            # determine if the current lag value causes us to go past the
+            # end of the audio sample - if so - skip and set val to 0
+            if ((k + (params[1].samples_correlated_per_lag - 1) +
+               (current_frame * params[1].samples_per_frame)) >= audio[1].size):
+                # TODO: Verify this behavior in unit test - no need to set val
+                # since 0.0 is default
+                continue
 
-        # determine if the current lag value causes us to go past the
-        # end of the audio sample - if so - skip and set val to 0
-        if ((k + (params[1].samples_correlated_per_lag - 1)
-             + (current_frame * params[1].samples_per_frame)) >= audio[1].size):
-            # TODO: Verify this behavior in unit test - no need to set val
-            # since 0.0 is default
-            continue
-
-        candidates[k] = _get_correlation(audio, current_frame, k, params, False)
-        if candidates[k] > max_correlation_val:
-            max_correlation_val = candidates[k]
+            candidates[k] = _get_correlation(audio, current_frame, k, params,
+                                             False)
+            if candidates[k] > max_correlation_val:
+                max_correlation_val = candidates[k]
 
     return (candidates, max_correlation_val)
 
