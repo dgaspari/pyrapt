@@ -347,8 +347,10 @@ def _get_sample(audio, frame, correlation_index, nccfparam):
 # summation of samples from "m" to "m+n-1"
     # sum_frame_samples = sum(audio[1][frame_start:last_sample_in_frame])
     frame_sample_sum = 0.0
-    for j in xrange(frame_start, last_sample_in_frame):
-        frame_sample_sum += audio[1][j]
+    frame_sample_sum = sum(audio[1][frame_start:last_sample_in_frame])
+    # for j in xrange(frame_start, last_sample_in_frame):
+    #    frame_sample_sum += audio[1][j]
+
     # value of "u_i" in NCCF equation
     mean_for_window = ((float(1.0)
                        / float(nccfparam.samples_correlated_per_lag))
