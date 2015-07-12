@@ -26,6 +26,9 @@ def rapt(wavfile_path, **kwargs):
     downsampled_audio = _get_downsampled_audio(original_audio,
                                                raptparam.maximum_allowed_freq)
 
+    original_audio = (original_audio[0], original_audio[1].tolist())
+    downsampled_audio = (downsampled_audio[0], downsampled_audio[1].tolist())
+
     nccf_results = _run_nccf(downsampled_audio, original_audio, raptparam)
 
     # NCCF (normalized cross correlation function) - identify F0 candidates
@@ -244,7 +247,7 @@ def _get_correlations_for_all_lags(audio, current_frame, lag_range, params):
         # determine if the current lag value causes us to go past the
         # end of the audio sample - if so - skip and set val to 0
         if ((current_lag + (params[1].samples_correlated_per_lag - 1)
-             + (current_frame * params[1].samples_per_frame)) >= audio[1].size):
+             + (current_frame * params[1].samples_per_frame)) >= len(audio[1])):
             # candidates[k] = 0.0
             # TODO: Verify this behavior in unit test - no need to set val
             # since 0.0 is default
@@ -272,7 +275,7 @@ def _get_correlations_for_input_lags(audio, current_frame, first_pass,
             # determine if the current lag value causes us to go past the
             # end of the audio sample - if so - skip and set val to 0
             if ((k + (params[1].samples_correlated_per_lag - 1) +
-               (current_frame * params[1].samples_per_frame)) >= audio[1].size):
+               (current_frame * params[1].samples_per_frame)) >= len(audio[1])):
                 # TODO: Verify this behavior in unit test - no need to set val
                 # since 0.0 is default
                 continue
