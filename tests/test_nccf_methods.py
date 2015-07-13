@@ -209,7 +209,7 @@ class TestNccfMethods(TestCase):
         param.samples_per_frame = 1
         audio_data = (10, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
         # frame sum is sum of samples from frame start to samples per lag
-        sample = pyrapt._get_sample(audio_data, 1, 5, param, 15)
+        sample = pyrapt._get_sample(audio_data, 1, 5, param, 3.0)
         self.assertEqual(3.0, sample)
 
     @patch('pyrapt.pyrapt._get_sample')

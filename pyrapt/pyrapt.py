@@ -312,27 +312,34 @@ def _get_marked_firstpass_results(lag_results, params):
     return returned_candidates
 
 
-# TODO: Need opt parameter to introduce A_FACT to denominator values
 def _get_correlation(audio, frame, lag, params, is_firstpass=True):
     samples = 0
 
+    # mean_for_window is the mean signal for the current analysis window
+    # David Talkin suggests this in his RAPT paper as a variant to the original
+    # NCCF function. This mean only needs to be calculated once per frame.
+    # NOTE: summation is from m (frame start) to m+n-1 (m + samples handled
+    # per lag). The -1 is implicit when summing the array between m and n
     frame_start = frame * params[1].samples_per_frame
     final_correlated_sample = frame_start + params[1].samples_correlated_per_lag
     frame_sum = sum(audio[1][frame_start:final_correlated_sample])
+    mean_for_window = ((1.0 / float(params[1].samples_correlated_per_lag))
+                       * frame_sum)
 
     # NOTE: NCCF formula has inclusive summation from 0 to n-1, but must add
     # 1 to max value here due to standard behavior of range/xrange:
     for j in xrange(0, params[1].samples_correlated_per_lag):
-        correlated_samples = _get_sample(audio, frame, j, params[1], frame_sum)
+        correlated_samples = _get_sample(audio, frame, j, params[1],
+                                         mean_for_window)
         samples_for_lag = _get_sample(audio, frame, j + lag, params[1],
-                                      frame_sum)
+                                      mean_for_window)
         samples += correlated_samples * samples_for_lag
 
     denominator_base = _get_nccf_denominator_val(audio, frame, 0, params[1],
-                                                 frame_sum)
+                                                 mean_for_window)
 
     denominator_lag = _get_nccf_denominator_val(audio, frame, lag, params[1],
-                                                frame_sum)
+                                                mean_for_window)
 
     if is_firstpass:
         denominator = math.sqrt(denominator_base * denominator_lag)
@@ -344,19 +351,11 @@ def _get_correlation(audio, frame, lag, params, is_firstpass=True):
     return float(samples) / float(denominator)
 
 
-def _get_sample(audio, frame, correlation_index, nccfparam, frame_sum):
-    returned_signal = 0
-    # value of "m" in NCCF equation (m=iz)
-    frame_start = frame * nccfparam.samples_per_frame
-    # value of "m+j" in NCCF equation
-    current_sample_index = frame_start + correlation_index
+def _get_sample(audio, frame, correlation_index, nccfparam, mean_for_window):
+    current_sample_index = (frame * nccfparam.samples_per_frame
+                            + correlation_index)
     # value of "x_m+j" in NCCF equation
     current_sample = audio[1][current_sample_index]
-
-    # value of "u_i" in NCCF equation
-    mean_for_window = ((float(1.0)
-                       / float(nccfparam.samples_correlated_per_lag))
-                       * frame_sum)
 
     returned_signal = current_sample - mean_for_window
 
