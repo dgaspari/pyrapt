@@ -222,7 +222,7 @@ def _get_firstpass_frame_results(audio, current_frame, lag_range, params):
     all_lag_results = _get_correlations_for_all_lags(audio, current_frame,
                                                      lag_range, params)
 
-    marked_values = _get_marked_firstpass_results(all_lag_results, params)
+    marked_values = _get_marked_results(all_lag_results, params, True)
     return marked_values
 
 
@@ -233,7 +233,7 @@ def _get_secondpass_frame_results(audio, current_frame, lag_range, params,
                                                    first_pass,  lag_range,
                                                    params, sample_rate_ratio)
 
-    marked_values = _get_marked_firstpass_results(lag_results, params)
+    marked_values = _get_marked_results(lag_results, params, False)
     return marked_values
 
 
@@ -289,16 +289,19 @@ def _get_correlations_for_input_lags(audio, current_frame, first_pass,
 
 
 # TODO: this can be used for 2nd pass - use parameter to decide 1stpass run?
-def _get_marked_firstpass_results(lag_results, params):
+def _get_marked_results(lag_results, params, is_firstpass=True):
     # values that meet certain threshold shall be marked for consideration
     min_valid_correlation = (lag_results[1] * params[0].min_acceptable_peak_val)
     max_allowed_candidates = params[0].max_hypotheses_per_frame - 1
 
     candidates = []
     for k, k_val in enumerate(lag_results[0]):
-        current_lag = k + params[1].shortest_lag_per_frame
         if k_val >= min_valid_correlation:
-            candidates.append((current_lag, k_val))
+            if is_firstpass:
+                candidates.append(_get_peak_lag_val(lag_results[0], k, params))
+            else:
+                current_lag = k + params[1].shortest_lag_per_frame
+                candidates.append((current_lag, k_val))
 
     # now check to see if selected candidates exceed max allowed:
     if len(candidates) > max_allowed_candidates:
@@ -370,3 +373,8 @@ def _get_nccf_denominator_val(audio, frame_start, starting_val, nccfparam,
         sample = float(_get_sample(audio, frame_start, l, nccfparam, frame_sum))
         total_sum += (sample ** 2)
     return total_sum
+
+
+def _get_peak_lag_val(lag_results, lag_index, params):
+    current_lag = lag_index + params[1].shortest_lag_per_frame
+    return (current_lag, lag_results[lag_index])
