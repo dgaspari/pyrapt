@@ -4,7 +4,7 @@ based on David Talkin's Robust Algorithm for Pitch Tracking (RAPT).
 """
 
 import math
-# import numpy
+import numpy
 from scipy import signal
 from scipy.io import wavfile
 
@@ -270,19 +270,22 @@ def _get_correlations_for_input_lags(audio, current_frame, first_pass,
         # 1st pass lag value has been interpolated for original audio sample:
         lag_peak = lag_val[0]
 
-        # for each peak check the closest 7 lags
-        for k in xrange(lag_peak - 3, lag_peak + 4):
-            # determine if the current lag value causes us to go past the
-            # end of the audio sample - if so - skip and set val to 0
-            if ((k + (params[1].samples_correlated_per_lag - 1) +
-               (current_frame * params[1].samples_per_frame)) >= len(audio[1])):
-                # TODO: Verify this behavior in unit test - no need to set val
-                # since 0.0 is default
-                continue
-            candidates[k] = _get_correlation(audio, current_frame, k, params,
-                                             False)
-            if candidates[k] > max_correlation_val:
-                max_correlation_val = candidates[k]
+        # for each peak check the closest 7 lags (if proposed peak is ok):
+        if lag_peak > 3 and lag_peak < lag_range - 3:
+            for k in xrange(lag_peak - 3, lag_peak + 4):
+                # determine if the current lag value causes us to go past the
+                # end of the audio sample - if so - skip and set val to 0
+                sample_range = (k + (params[1].samples_correlated_per_lag - 1) +
+                                (current_frame * params[1].samples_per_frame))
+                if sample_range >= len(audio[1]):
+                    # TODO: Verify this behavior in unit test -
+                    # no need to set val
+                    # since 0.0 is default
+                    continue
+                candidates[k] = _get_correlation(audio, current_frame, k,
+                                                 params, False)
+                if candidates[k] > max_correlation_val:
+                    max_correlation_val = candidates[k]
 
     return (candidates, max_correlation_val)
 
@@ -375,9 +378,33 @@ def _get_nccf_denominator_val(audio, frame_start, starting_val, nccfparam,
 
 
 def _get_peak_lag_val(lag_results, lag_index, params):
-    current_lag = lag_index + params[1].shortest_lag_per_frame
-    extrapolated_lag = int(current_lag * params[0].sample_rate_ratio)
-    return (extrapolated_lag, lag_results[lag_index])
+    # current_lag = lag_index + params[1].shortest_lag_per_frame
+    # extrapolated_lag = int(current_lag * params[0].sample_rate_ratio)
+    # return (extrapolated_lag, lag_results[lag_index])
+
+    # lag peak is the maxima of a given peak obtained by results
+    lag_peak = lag_index + params[1].shortest_lag_per_frame
+    x_vals = []
+    y_vals = []
+
+    if lag_index == 0:
+        y_vals = lag_results[lag_index:lag_index + 3]
+        x_vals = range(lag_peak, lag_peak+3)
+    elif lag_index == (len(lag_results)-1):
+        y_vals = lag_results[lag_index-2:lag_index+1]
+        x_vals = range(lag_peak-2, lag_peak+1)
+    else:
+        y_vals = lag_results[lag_index-1:lag_index+2]
+        x_vals = range(lag_peak-1, lag_peak+2)
+
+    parabolic_func = numpy.polyfit(x_vals, y_vals, 2)
+    # return maxima of the parabola, shifted to appropriate lag value
+    lag_peak = -parabolic_func[1] / (2 * parabolic_func[0])
+    lag_peak = round(lag_peak * params[0].sample_rate_ratio)
+    lag_peak = int(lag_peak)
+    return (lag_peak, lag_results[lag_index])
+
+    # # # # # # # # # # # # # # # # # # # #
     # if lag_index == 0 or lag_index == (len(lag_results)-1):
     #    current_lag = lag_index + params[1].shortest_lag_per_frame
     #    return (current_lag, lag_results[lag_index])

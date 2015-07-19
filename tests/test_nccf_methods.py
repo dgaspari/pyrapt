@@ -241,23 +241,25 @@ class TestNccfMethods(TestCase):
         returned = pyrapt._get_nccf_denominator_val(audio_data, 0, 4, param, 4)
         self.assertEqual(12.0, returned)
 
-    # def test_get_peak_lag(self):
-    #    candidates = [0.7, 0.2, 0.6, 0.5]
-    #    params = (raptparams.Raptparams(), nccfparams.Nccfparams())
-    #    params[1].shortest_lag_per_frame = 7
-    #    params[0].min_acceptable_peak_val = 0.5
-    #    params[0].max_hypotheses_per_frame = 19
-    #    candidate = pyrapt._get_peak_lag_val(candidates, 2, params)
-    #    self.assertEqual((9.3, 0.6), candidate)
-
-    def test_get_peak_lag_array_bounds(self):
-        candidates = [0.7, 0.2, 0.6, 0.8]
+    def test_get_peak_lag(self):
+        candidates = [0.7, 0.2, 0.6, 0.5]
         params = (raptparams.Raptparams(), nccfparams.Nccfparams())
         params[1].shortest_lag_per_frame = 7
         params[0].min_acceptable_peak_val = 0.5
         params[0].max_hypotheses_per_frame = 19
-        params[0].sample_rate_ratio = 2
-        candidate = pyrapt._get_peak_lag_val(candidates, 0, params)
-        self.assertEqual((14, 0.7), candidate)
-        candidate = pyrapt._get_peak_lag_val(candidates, 3, params)
-        self.assertEqual((20, 0.8), candidate)
+        params[0].sample_rate_ratio = 10
+        candidate = pyrapt._get_peak_lag_val(candidates, 2, params)
+        self.assertEqual((93, 0.6), candidate)
+
+    # TODO: fix this to actually verify boundary behavior (take 1st or last 3)
+    # def test_get_peak_lag_array_bounds(self):
+    #    candidates = [0.7, 0.2, 0.6, 0.8]
+    #    params = (raptparams.Raptparams(), nccfparams.Nccfparams())
+    #    params[1].shortest_lag_per_frame = 7
+    #    params[0].min_acceptable_peak_val = 0.5
+    #    params[0].max_hypotheses_per_frame = 19
+    #    params[0].sample_rate_ratio = 2
+    #    candidate = pyrapt._get_peak_lag_val(candidates, 0, params)
+    #    self.assertEqual((14, 0.7), candidate)
+    #    candidate = pyrapt._get_peak_lag_val(candidates, 3, params)
+    #    self.assertEqual((20, 0.8), candidate)
