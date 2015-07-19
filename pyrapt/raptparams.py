@@ -29,3 +29,6 @@ class Raptparams:
 
         # Value of A_FACT" in NCCF equation:
         self.additive_constant = 10000
+
+        # sample rate ratio used to extrapolate 1st pass lags onto 2nd pass:
+        self.sample_rate_ratio = None

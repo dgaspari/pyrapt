@@ -26,7 +26,7 @@ class TestNccfMethods(TestCase):
                                        params)
             mock_first_pass.assert_called_once_with(downsampled_audio, params)
             mock_second_pass.assert_called_once_with(original_audio, ANY,
-                                                     params, 10.0)
+                                                     params)
             self.assertEqual(166, len(results))
             self.assertEqual(4, results[0][0][0])
             self.assertEqual(0.6, results[165][2][1])
@@ -68,6 +68,7 @@ class TestNccfMethods(TestCase):
         first_pass = [(4, 0.6), (4, 0.6), (4, 0.6)] * 165
         audio_data = (44100, numpy.full(73612, 6.8))
         raptparam = raptparams.Raptparams()
+        raptparam.sample_rate_ratio = 20
         with patch('pyrapt.pyrapt._get_nccf_params') as mock_get_params:
             nccfparam = nccfparams.Nccfparams()
             # lag range is supposed to be 0-samplerate/50 for 2nd pass default:
@@ -77,12 +78,12 @@ class TestNccfMethods(TestCase):
             params = (raptparam, nccfparam)
             mock_get_params.return_value = nccfparam
             candidates = pyrapt._second_pass_nccf(audio_data, first_pass,
-                                                  raptparam, 20)
+                                                  raptparam)
             mock_get_params.assert_called_once_with(audio_data, raptparam,
                                                     False)
             # at each frame we get results, with lag range being max - 1
             mock_frame_results.assert_called_with(audio_data, ANY, 881, params,
-                                                  first_pass, 20)
+                                                  first_pass)
             self.assertEqual(165, len(candidates))
             self.assertEqual(5, candidates[0][0][0])
 
@@ -110,13 +111,14 @@ class TestNccfMethods(TestCase):
             i = 5
             lag_range = 5
             params = (raptparams.Raptparams(), nccfparams.Nccfparams())
+            params[0].sample_rate_ratio = 20
             first_pass = [(4, 0.5), (5, 0.6), (22, 0.7)] * 165
             frame_results = pyrapt._get_secondpass_frame_results(audio, i,
                                                                  lag_range,
                                                                  params,
-                                                                 first_pass, 20)
+                                                                 first_pass)
             mock_get_correlations.assert_called_once_with(audio, 5, first_pass,
-                                                          5, params, 20)
+                                                          5, params)
             mock_res.assert_called_once_with(mock_return_val, params, False)
             self.assertEqual(4, frame_results[0][0])
 
@@ -145,13 +147,14 @@ class TestNccfMethods(TestCase):
         mock_get_correlation.return_value = 0.6
         audio = (44100, numpy.full(3500, 5.0))
         params = (raptparams.Raptparams(), nccfparams.Nccfparams())
+        params[0].sample_rate_ratio = 4
         params[1].samples_correlated_per_lag = 20
         params[1].samples_per_frame = 100
         params[1].shortest_lag_per_frame = 0
         lag_range = 50
         first_pass = [[(8, 0.7)]] * 35
         results = pyrapt._get_correlations_for_input_lags(audio, 5, first_pass,
-                                                          lag_range, params, 4)
+                                                          lag_range, params)
         mock_get_correlation.assert_called_with(ANY, ANY, ANY, ANY, False)
         self.assertEqual(50, len(results[0]))
         self.assertEqual(0.6, results[0][32])
@@ -238,11 +241,22 @@ class TestNccfMethods(TestCase):
         returned = pyrapt._get_nccf_denominator_val(audio_data, 0, 4, param, 4)
         self.assertEqual(12.0, returned)
 
-    def test_get_peak_lag(self):
+    # def test_get_peak_lag(self):
+    #    candidates = [0.7, 0.2, 0.6, 0.5]
+    #    params = (raptparams.Raptparams(), nccfparams.Nccfparams())
+    #    params[1].shortest_lag_per_frame = 7
+    #    params[0].min_acceptable_peak_val = 0.5
+    #    params[0].max_hypotheses_per_frame = 19
+    #    candidate = pyrapt._get_peak_lag_val(candidates, 2, params)
+    #    self.assertEqual((9.3, 0.6), candidate)
+
+    def test_get_peak_lag_array_bounds(self):
         candidates = [0.7, 0.2, 0.6, 0.8]
         params = (raptparams.Raptparams(), nccfparams.Nccfparams())
         params[1].shortest_lag_per_frame = 7
         params[0].min_acceptable_peak_val = 0.5
         params[0].max_hypotheses_per_frame = 19
-        candidate = pyrapt._get_peak_lag_val(candidates, 2, params)
-        self.assertEqual((9, 0.6), candidate)
+        candidate = pyrapt._get_peak_lag_val(candidates, 0, params)
+        self.assertEqual((7, 0.7), candidate)
+        candidate = pyrapt._get_peak_lag_val(candidates, 3, params)
+        self.assertEqual((10, 0.8), candidate)

@@ -29,6 +29,9 @@ def rapt(wavfile_path, **kwargs):
     original_audio = (original_audio[0], original_audio[1].tolist())
     downsampled_audio = (downsampled_audio[0], downsampled_audio[1].tolist())
 
+    raptparam.sample_rate_ratio = (float(original_audio[0]) /
+                                   float(downsampled_audio[0]))
+
     nccf_results = _run_nccf(downsampled_audio, original_audio, raptparam)
 
     # NCCF (normalized cross correlation function) - identify F0 candidates
@@ -135,11 +138,10 @@ def _calculate_downsampling_rate(initial_sampling_rate, maximum_f0):
 def _run_nccf(downsampled_audio, original_audio, raptparam):
     first_pass = _first_pass_nccf(downsampled_audio, raptparam)
 
-    sample_rate_ratio = float(original_audio[0]) / float(downsampled_audio[0])
+    # sample_rate_ratio = float(original_audio[0]) / float(downsampled_audio[0])
 
     # run second pass
-    second_pass = _second_pass_nccf(original_audio, first_pass, raptparam,
-                                    sample_rate_ratio)
+    second_pass = _second_pass_nccf(original_audio, first_pass, raptparam)
 
     return second_pass
 
@@ -170,7 +172,7 @@ def _first_pass_nccf(audio, raptparam):
     return candidates
 
 
-def _second_pass_nccf(original_audio, first_pass, raptparam, sample_rate_ratio):
+def _second_pass_nccf(original_audio, first_pass, raptparam):
     # Runs NCCF on original audio, but only for lags highlighted from first
     # pass results. Will output the finalized F0 candidates for each frame
 
@@ -185,7 +187,7 @@ def _second_pass_nccf(original_audio, first_pass, raptparam, sample_rate_ratio):
 
     for i in xrange(0, params[1].max_frame_count):
         candidates[i] = _get_secondpass_frame_results(
-            original_audio, i, lag_range, params, first_pass, sample_rate_ratio)
+            original_audio, i, lag_range, params, first_pass)
 
     return candidates
 
@@ -227,11 +229,11 @@ def _get_firstpass_frame_results(audio, current_frame, lag_range, params):
 
 
 def _get_secondpass_frame_results(audio, current_frame, lag_range, params,
-                                  first_pass, sample_rate_ratio):
+                                  first_pass):
 
     lag_results = _get_correlations_for_input_lags(audio, current_frame,
                                                    first_pass,  lag_range,
-                                                   params, sample_rate_ratio)
+                                                   params)
 
     marked_values = _get_marked_results(lag_results, params, False)
     return marked_values
@@ -263,13 +265,13 @@ def _get_correlations_for_all_lags(audio, current_frame, lag_range, params):
 
 
 def _get_correlations_for_input_lags(audio, current_frame, first_pass,
-                                     lag_range, params, sample_rate_ratio):
+                                     lag_range, params):
     candidates = [0.0] * lag_range
     max_correlation_val = 0.0
     for lag_val in first_pass[current_frame]:
         # take lag peak from downsampled audio, adjust so that it is useful
         # for the audio at the original sampling rate (use sample rate ratio)
-        lag_peak = int(lag_val[0] * sample_rate_ratio)
+        lag_peak = int(lag_val[0] * params[0].sample_rate_ratio)
         # for each peak check the closest 7 lags
         for k in xrange(lag_peak - 3, lag_peak + 4):
             # determine if the current lag value causes us to go past the
@@ -279,7 +281,6 @@ def _get_correlations_for_input_lags(audio, current_frame, first_pass,
                 # TODO: Verify this behavior in unit test - no need to set val
                 # since 0.0 is default
                 continue
-
             candidates[k] = _get_correlation(audio, current_frame, k, params,
                                              False)
             if candidates[k] > max_correlation_val:
@@ -378,3 +379,16 @@ def _get_nccf_denominator_val(audio, frame_start, starting_val, nccfparam,
 def _get_peak_lag_val(lag_results, lag_index, params):
     current_lag = lag_index + params[1].shortest_lag_per_frame
     return (current_lag, lag_results[lag_index])
+    # if lag_index == 0 or lag_index == (len(lag_results)-1):
+    #    current_lag = lag_index + params[1].shortest_lag_per_frame
+    #    return (current_lag, lag_results[lag_index])
+    # else:
+    #    # get parabolic function from lag values before and after candidate
+    #    k = lag_index
+    #    x_vals = range(k-1, k+2)
+    #    y_vals = lag_results[k-1:k+2]
+    #    parabolic_func = numpy.polyfit(x_vals, y_vals, 2)
+    #    # return maxima of the parabola, shifted to appropriate lag value
+    #    lag_peak = -parabolic_func[1] / (2 * parabolic_func[0])
+    #    lag_peak += params[1].shortest_lag_per_frame
+    #    return (lag_peak, lag_results[lag_index])

@@ -20,6 +20,7 @@ class TestUtilityMethods(TestCase):
         self.assertEqual(20, params.max_hypotheses_per_frame)
         self.assertEqual(0.3, params.min_acceptable_peak_val)
         self.assertEqual(10000, params.additive_constant)
+        self.assertEqual(None, params.sample_rate_ratio)
 
     def test_custom_kwargs(self):
         params = pyrapt._setup_rapt_params({'maximum_allowed_freq': 250,
@@ -36,6 +37,7 @@ class TestUtilityMethods(TestCase):
         self.assertEqual(5, params.max_hypotheses_per_frame)
         self.assertEqual(1.5, params.min_acceptable_peak_val)
         self.assertEqual(100, params.additive_constant)
+        self.assertEqual(None, params.sample_rate_ratio)
 
     def test_partial_custom_kwargs(self):
         params = pyrapt._setup_rapt_params({'correlation_window_size': 88})
@@ -44,6 +46,7 @@ class TestUtilityMethods(TestCase):
         self.assertEqual(0.01, params.frame_step_size)
         self.assertEqual(88, params.correlation_window_size)
         self.assertEqual(10000, params.additive_constant)
+        self.assertEqual(None, params.sample_rate_ratio)
 
     def test_non_dict_input_kwrags(self):
         not_a_dict = 'foo'
