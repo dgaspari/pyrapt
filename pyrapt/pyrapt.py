@@ -138,8 +138,6 @@ def _calculate_downsampling_rate(initial_sampling_rate, maximum_f0):
 def _run_nccf(downsampled_audio, original_audio, raptparam):
     first_pass = _first_pass_nccf(downsampled_audio, raptparam)
 
-    # sample_rate_ratio = float(original_audio[0]) / float(downsampled_audio[0])
-
     # run second pass
     second_pass = _second_pass_nccf(original_audio, first_pass, raptparam)
 
@@ -269,9 +267,9 @@ def _get_correlations_for_input_lags(audio, current_frame, first_pass,
     candidates = [0.0] * lag_range
     max_correlation_val = 0.0
     for lag_val in first_pass[current_frame]:
-        # take lag peak from downsampled audio, adjust so that it is useful
-        # for the audio at the original sampling rate (use sample rate ratio)
-        lag_peak = int(lag_val[0] * params[0].sample_rate_ratio)
+        # 1st pass lag value has been interpolated for original audio sample:
+        lag_peak = lag_val[0]
+
         # for each peak check the closest 7 lags
         for k in xrange(lag_peak - 3, lag_peak + 4):
             # determine if the current lag value causes us to go past the
@@ -378,7 +376,8 @@ def _get_nccf_denominator_val(audio, frame_start, starting_val, nccfparam,
 
 def _get_peak_lag_val(lag_results, lag_index, params):
     current_lag = lag_index + params[1].shortest_lag_per_frame
-    return (current_lag, lag_results[lag_index])
+    extrapolated_lag = int(current_lag * params[0].sample_rate_ratio)
+    return (extrapolated_lag, lag_results[lag_index])
     # if lag_index == 0 or lag_index == (len(lag_results)-1):
     #    current_lag = lag_index + params[1].shortest_lag_per_frame
     #    return (current_lag, lag_results[lag_index])

@@ -152,7 +152,7 @@ class TestNccfMethods(TestCase):
         params[1].samples_per_frame = 100
         params[1].shortest_lag_per_frame = 0
         lag_range = 50
-        first_pass = [[(8, 0.7)]] * 35
+        first_pass = [[(32, 0.7)]] * 35
         results = pyrapt._get_correlations_for_input_lags(audio, 5, first_pass,
                                                           lag_range, params)
         mock_get_correlation.assert_called_with(ANY, ANY, ANY, ANY, False)
@@ -256,7 +256,8 @@ class TestNccfMethods(TestCase):
         params[1].shortest_lag_per_frame = 7
         params[0].min_acceptable_peak_val = 0.5
         params[0].max_hypotheses_per_frame = 19
+        params[0].sample_rate_ratio = 2
         candidate = pyrapt._get_peak_lag_val(candidates, 0, params)
-        self.assertEqual((7, 0.7), candidate)
+        self.assertEqual((14, 0.7), candidate)
         candidate = pyrapt._get_peak_lag_val(candidates, 3, params)
-        self.assertEqual((10, 0.8), candidate)
+        self.assertEqual((20, 0.8), candidate)
