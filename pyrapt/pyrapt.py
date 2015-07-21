@@ -34,17 +34,11 @@ def rapt(wavfile_path, **kwargs):
 
     nccf_results = _run_nccf(downsampled_audio, original_audio, raptparam)
 
-    # NCCF (normalized cross correlation function) - identify F0 candidates
-    # TODO: Determine if we want to preprocess audio before NCCF
-    # first_pass, max_cor = _first_pass_nccf(downsampled_audio, downsampling_ra
-    # first_pass is the theta_i,k and max_cor is theta_max from the results
-    # period_candidates = _second_pass_nccf(audio_sample, sample_rate,
-    #                                        first_pass, max_cor)
-
     # Dynamic programming - determine voicing state at each period candidate
+    freq_estimate = _get_freq_estimate(nccf_results, raptparam)
 
     # return output of nccf for now
-    return nccf_results
+    return freq_estimate
 
 
 def _setup_rapt_params(kwargs):
@@ -130,6 +124,7 @@ def _calculate_downsampling_rate(initial_sampling_rate, maximum_f0):
                          'division by zero. Cannot perform 1st pass of nccf '
                          'on downsampled audio.')
     return int(aReturn)
+
 
 # NCCF Functionality:
 # TODO: Consider moving nccf functions into a separate module / file?
@@ -404,17 +399,7 @@ def _get_peak_lag_val(lag_results, lag_index, params):
     lag_peak = int(lag_peak)
     return (lag_peak, lag_results[lag_index])
 
-    # # # # # # # # # # # # # # # # # # # #
-    # if lag_index == 0 or lag_index == (len(lag_results)-1):
-    #    current_lag = lag_index + params[1].shortest_lag_per_frame
-    #    return (current_lag, lag_results[lag_index])
-    # else:
-    #    # get parabolic function from lag values before and after candidate
-    #    k = lag_index
-    #    x_vals = range(k-1, k+2)
-    #    y_vals = lag_results[k-1:k+2]
-    #    parabolic_func = numpy.polyfit(x_vals, y_vals, 2)
-    #    # return maxima of the parabola, shifted to appropriate lag value
-    #    lag_peak = -parabolic_func[1] / (2 * parabolic_func[0])
-    #    lag_peak += params[1].shortest_lag_per_frame
-    #    return (lag_peak, lag_results[lag_index])
+
+# Dynamic Programming / Post-Processing:
+def _get_freq_estimate(nccf_results, raptparam):
+    return nccf_results
