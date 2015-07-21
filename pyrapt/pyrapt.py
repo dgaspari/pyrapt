@@ -35,7 +35,8 @@ def rapt(wavfile_path, **kwargs):
     nccf_results = _run_nccf(downsampled_audio, original_audio, raptparam)
 
     # Dynamic programming - determine voicing state at each period candidate
-    freq_estimate = _get_freq_estimate(nccf_results, raptparam)
+    freq_estimate = _get_freq_estimate(nccf_results, raptparam,
+                                       original_audio[0])
 
     # return output of nccf for now
     return freq_estimate
@@ -401,5 +402,20 @@ def _get_peak_lag_val(lag_results, lag_index, params):
 
 
 # Dynamic Programming / Post-Processing:
-def _get_freq_estimate(nccf_results, raptparam):
-    return nccf_results
+
+# this method will obtain best candidate per frame and calc freq est per frame
+def _get_freq_estimate(nccf_results, raptparam, sample_rate):
+    results = []
+    candidates = _determine_state_per_frame(nccf_results, raptparam)
+    for candidate in candidates:
+        results.append(sample_rate/candidate)
+    return results
+
+
+# this method will prepare to call a recursive function that will determine
+# the optimal voicing state / candidate per frame
+def _determine_state_per_frame(nccf_results, raptparam):
+    candidates = []
+    for result in nccf_results:
+        candidates.append(result[0][0])
+    return candidates
