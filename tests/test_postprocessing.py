@@ -38,6 +38,12 @@ class TestPostProcessingMethods(TestCase):
                                                 raptparam, 44100)
         self.assertEqual(166, len(candidates))
 
+    def test_select_max_correlation(self):
+        nccf_results_frame = [(172, 0.5423), (235, 0.682), (422, 0.51),
+                              (533, 0.822), (0, 0.0)]
+        max_cand = pyrapt._select_max_correlation_for_frame(nccf_results_frame)
+        self.assertEqual(0.822, max_cand)
+
     def test_calculate_local_cost(self):
         # standard voiced hypothesis calc:
         raptparam = raptparams.Raptparams()

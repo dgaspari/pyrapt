@@ -433,6 +433,14 @@ def _process_candidates(frame_idx, candidates, nccf_results, raptparam,
     return new_candidates
 
 
+def _select_max_correlation_for_frame(nccf_results_frame):
+    maxval = 0.0
+    for hypothesis in nccf_results_frame:
+        if hypothesis[1] > maxval:
+            maxval = hypothesis[1]
+    return maxval
+
+
 def _calculate_local_cost(correlation_val, lag_val, max_corr_for_frame,
                           raptparam, sample_rate):
     # calculate local cost of hypothesis (d_i,j in RAPT)
