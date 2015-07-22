@@ -46,21 +46,8 @@ def _setup_rapt_params(kwargs):
     # Use optional args for RAPT parameters otherwise use defaults
     params = raptparams.Raptparams()
     if kwargs is not None and isinstance(kwargs, dict):
-        for key, value in kwargs.iteritems():
-            if key == 'maximum_allowed_freq':
-                params.maximum_allowed_freq = value
-            if key == 'minimum_allowed_freq':
-                params.minimum_allowed_freq = value
-            if key == 'frame_step_size':
-                params.frame_step_size = value
-            if key == 'correlation_window_size':
-                params.correlation_window_size = value
-            if key == 'max_hypotheses_per_frame':
-                params.max_hypotheses_per_frame = value
-            if key == 'min_acceptable_peak_val':
-                params.min_acceptable_peak_val = value
-            if key == 'additive_constant':
-                params.additive_constant = value
+        for key, value in kwargs.items():
+            setattr(params, key, value)
     return params
 
 
@@ -445,3 +432,17 @@ def _process_candidates(frame_idx, candidates, nccf_results, raptparam,
     else:
         new_candidates.append(nccf_results[frame_idx][1])
     return new_candidates
+
+
+# def _calculate_local_cost(correlation_val, lag_val, max_corr_for_frame,
+#                          raptparam, sample_rate):
+#    # calculate local cost of hypothesis (d_i,j in RAPT)
+#    if correlation_val == 0.0 and lag_val == 0.0:
+#        # unvoiced hypothesis:
+#        cost = raptparam.voicing_bias + max_corr_for_frame
+#    else:
+#        # voiced hypothesis
+#        lag_weight = (float(raptparam.lag_weight) / float(sample_rate /
+#                      raptparam.minimum_allowed_freq))
+#        cost = 1.0 - correlation_val * (1 - lag_weight)
+#    return cost

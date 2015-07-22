@@ -20,6 +20,10 @@ class TestUtilityMethods(TestCase):
         self.assertEqual(20, params.max_hypotheses_per_frame)
         self.assertEqual(0.3, params.min_acceptable_peak_val)
         self.assertEqual(10000, params.additive_constant)
+        self.assertEqual(0.35, params.doubling_cost)
+        self.assertEqual(0.0, params.voicing_bias)
+        self.assertEqual(0.3, params.lag_weight)
+        self.assertEqual(0.02, params.freq_weight)
         self.assertEqual(None, params.sample_rate_ratio)
 
     def test_custom_kwargs(self):
@@ -29,7 +33,8 @@ class TestUtilityMethods(TestCase):
                                             'correlation_window_size': 75,
                                             'max_hypotheses_per_frame': 5,
                                             'min_acceptable_peak_val': 1.5,
-                                            'additive_constant': 100})
+                                            'additive_constant': 100,
+                                            'doubling_cost': 0.4})
         self.assertEqual(250, params.maximum_allowed_freq)
         self.assertEqual(100, params.minimum_allowed_freq)
         self.assertEqual(0.5, params.frame_step_size)
@@ -37,6 +42,7 @@ class TestUtilityMethods(TestCase):
         self.assertEqual(5, params.max_hypotheses_per_frame)
         self.assertEqual(1.5, params.min_acceptable_peak_val)
         self.assertEqual(100, params.additive_constant)
+        self.assertEqual(0.4, params.doubling_cost)
         self.assertEqual(None, params.sample_rate_ratio)
 
     def test_partial_custom_kwargs(self):
@@ -46,6 +52,7 @@ class TestUtilityMethods(TestCase):
         self.assertEqual(0.01, params.frame_step_size)
         self.assertEqual(88, params.correlation_window_size)
         self.assertEqual(10000, params.additive_constant)
+        self.assertEqual(0.02, params.freq_weight)
         self.assertEqual(None, params.sample_rate_ratio)
 
     def test_non_dict_input_kwrags(self):

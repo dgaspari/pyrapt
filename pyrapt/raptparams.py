@@ -30,5 +30,26 @@ class Raptparams:
         # Value of A_FACT" in NCCF equation:
         self.additive_constant = 10000
 
+        # Value of VO_BIAS used when calculating voicing state:
+        self.voicing_bias = 0.0
+
+        # Value of DOUBL_C used when calculating voicing state:
+        self.doubling_cost = 0.35
+
+        # Value of LAG_WT used when calculating voicing state:
+        self.lag_weight = 0.3
+
+        # Value of FREQ_WT used when calculating voicing state:
+        self.freq_weight = 0.02
+
+        # Value of VTRAN_C used when calculating voicing state:
+        self.transition_cost = 0.005
+
+        # Value of VTR_A_C used when calculating voicing state:
+        self.amp_mod_transition_cost = 0.5
+
+        # Value of VTR_S_C used when calculating voicing state:
+        self.spec_mod_transition_cost = 0.5
+
         # sample rate ratio used to extrapolate 1st pass lags onto 2nd pass:
         self.sample_rate_ratio = None
