@@ -426,7 +426,6 @@ def _process_candidates(frame_idx, candidates, nccf_results, raptparam,
         new_candidates = _process_candidates(frame_idx-1, candidates,
                                              nccf_results, raptparam,
                                              sample_rate)
-
     if frame_idx > 50:
         new_candidates.append(nccf_results[frame_idx][0])
     else:
@@ -434,15 +433,16 @@ def _process_candidates(frame_idx, candidates, nccf_results, raptparam,
     return new_candidates
 
 
-# def _calculate_local_cost(correlation_val, lag_val, max_corr_for_frame,
-#                          raptparam, sample_rate):
-#    # calculate local cost of hypothesis (d_i,j in RAPT)
-#    if correlation_val == 0.0 and lag_val == 0.0:
-#        # unvoiced hypothesis:
-#        cost = raptparam.voicing_bias + max_corr_for_frame
-#    else:
-#        # voiced hypothesis
-#        lag_weight = (float(raptparam.lag_weight) / float(sample_rate /
-#                      raptparam.minimum_allowed_freq))
-#        cost = 1.0 - correlation_val * (1 - lag_weight)
-#    return cost
+def _calculate_local_cost(correlation_val, lag_val, max_corr_for_frame,
+                          raptparam, sample_rate):
+    # calculate local cost of hypothesis (d_i,j in RAPT)
+    if lag_val == 0 and correlation_val == 0.0:
+        # unvoiced hypothesis: add VO_BIAS to largest correlation val in frame
+        cost = raptparam.voicing_bias + max_corr_for_frame
+    else:
+        # voiced hypothesis
+        lag_weight = (float(raptparam.lag_weight) / float(sample_rate /
+                      float(raptparam.minimum_allowed_freq)))
+        cost = (1.0 - correlation_val * (1.0 - float(lag_weight)
+                * float(lag_val)))
+    return cost

@@ -37,3 +37,25 @@ class TestPostProcessingMethods(TestCase):
         candidates = pyrapt._process_candidates(165, [], nccf_results,
                                                 raptparam, 44100)
         self.assertEqual(166, len(candidates))
+
+    def test_calculate_local_cost(self):
+        # standard voiced hypothesis calc:
+        raptparam = raptparams.Raptparams()
+        raptparam.lag_weight = 0.4
+        raptparam.minimum_allowed_freq = 50
+        correlation_val = 0.5423
+        lag_val = 172
+        max_corr_for_frame = 0.682
+        sample_rate = 44100
+        cost = pyrapt._calculate_local_cost(correlation_val, lag_val,
+                                            max_corr_for_frame, raptparam,
+                                            sample_rate)
+        self.assertEqual(0.5000018594104307, cost)
+        # now test unvoiced hypothesis calc:
+        raptparam.voicing_bias = 10.0
+        lag_val = 0
+        correlation_val = 0.0
+        cost = pyrapt._calculate_local_cost(correlation_val, lag_val,
+                                            max_corr_for_frame, raptparam,
+                                            sample_rate)
+        self.assertEqual(10.682, cost)
