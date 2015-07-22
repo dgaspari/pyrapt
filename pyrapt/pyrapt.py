@@ -406,7 +406,8 @@ def _get_peak_lag_val(lag_results, lag_index, params):
 # this method will obtain best candidate per frame and calc freq est per frame
 def _get_freq_estimate(nccf_results, raptparam, sample_rate):
     results = []
-    candidates = _determine_state_per_frame(nccf_results, raptparam)
+    candidates = _determine_state_per_frame(nccf_results, raptparam,
+                                            sample_rate)
     for candidate in candidates:
         results.append(sample_rate/candidate)
     return results
@@ -414,8 +415,33 @@ def _get_freq_estimate(nccf_results, raptparam, sample_rate):
 
 # this method will prepare to call a recursive function that will determine
 # the optimal voicing state / candidate per frame
-def _determine_state_per_frame(nccf_results, raptparam):
+def _determine_state_per_frame(nccf_results, raptparam, sample_rate):
     candidates = []
+    # Add unvoiced candidate entry per frame (tuple w/ 0 lag, 0 correlation)
     for result in nccf_results:
-        candidates.append(result[0][0])
+        result.append((0, 0.0))
+
+    # now call recursive function that will calculate cost per candidate:
+    all_candidates = _process_candidates(len(nccf_results) - 1, [],
+                                         nccf_results, raptparam, sample_rate)
+
+    # with the results, take the lowest cost candidate per frame
+    for result in all_candidates:
+        candidates.append(result[0])
     return candidates
+
+
+def _process_candidates(frame_idx, candidates, nccf_results, raptparam,
+                        sample_rate):
+    new_candidates = []
+    # recursive step:
+    if frame_idx > 0:
+        new_candidates = _process_candidates(frame_idx-1, candidates,
+                                             nccf_results, raptparam,
+                                             sample_rate)
+
+    if frame_idx > 50:
+        new_candidates.append(nccf_results[frame_idx][0])
+    else:
+        new_candidates.append(nccf_results[frame_idx][1])
+    return new_candidates
