@@ -511,10 +511,26 @@ def _get_unvoiced_to_unvoiced_cost(prev_entry):
 def _get_voiced_to_unvoiced_cost(candidate, prev_entry, params):
     prev_cost = prev_entry[0]
     # prev_candidate = prev_entry[1]
-    return prev_cost + 0.0
+    delta = (params.transition_cost + (params.spec_mod_transition_cost *
+             _get_spec_stationarity()) + (params.amp_mod_transition_cost *
+             _get_rms_ratio()))
+    return prev_cost + delta
 
 
 def _get_unvoiced_to_voiced_cost(candidate, prev_entry, params):
     prev_cost = prev_entry[0]
     # prev_candidate = prev_entry[1]
-    return prev_cost + 0.0
+    delta = (params.transition_cost + (params.spec_mod_transition_cost *
+             _get_spec_stationarity()) + (params.amp_mod_transition_cost /
+             _get_rms_ratio()))
+    return prev_cost + delta
+
+
+# spectral stationarity function, denoted as S_i in the delta formulas:
+def _get_spec_stationarity():
+    return 1
+
+
+# RMS ratio, denoted as rr_i in the delta formulas:
+def _get_rms_ratio():
+    return 1
