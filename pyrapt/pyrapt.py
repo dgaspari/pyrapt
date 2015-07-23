@@ -396,7 +396,10 @@ def _get_freq_estimate(nccf_results, raptparam, sample_rate):
     candidates = _determine_state_per_frame(nccf_results, raptparam,
                                             sample_rate)
     for candidate in candidates:
-        results.append(sample_rate/candidate)
+        if candidate > 0:
+            results.append(sample_rate/candidate)
+        else:
+            results.append(0.0)
     return results
 
 

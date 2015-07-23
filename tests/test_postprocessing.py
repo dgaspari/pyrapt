@@ -20,6 +20,10 @@ class TestPostProcessingMethods(TestCase):
         mock_determine_state.assert_called_once_with(nccf_results, raptparam,
                                                      44100)
         self.assertEqual(166, len(results))
+        # now try it when returned results contain unvoiced hypothesis
+        mock_determine_state.return_value = [50, 0, 75]
+        results = pyrapt._get_freq_estimate(nccf_results, raptparam, 44100)
+        self.assertEqual(0.0, results[1])
 
     @patch('pyrapt.pyrapt._process_candidates')
     def test_determine_state_per_frame(self, mock_process):
