@@ -508,29 +508,38 @@ def _get_unvoiced_to_unvoiced_cost(prev_entry):
     return prev_entry[0] + 0.0
 
 
-def _get_voiced_to_unvoiced_cost(candidate, prev_entry, params):
+def _get_voiced_to_unvoiced_cost(candidate, prev_entry, params, sample_rate):
     prev_cost = prev_entry[0]
     # prev_candidate = prev_entry[1]
     delta = (params.transition_cost + (params.spec_mod_transition_cost *
              _get_spec_stationarity()) + (params.amp_mod_transition_cost *
-             _get_rms_ratio()))
+             _get_rms_ratio(sample_rate)))
     return prev_cost + delta
 
 
-def _get_unvoiced_to_voiced_cost(candidate, prev_entry, params):
+def _get_unvoiced_to_voiced_cost(candidate, prev_entry, params, sample_rate):
     prev_cost = prev_entry[0]
     # prev_candidate = prev_entry[1]
     delta = (params.transition_cost + (params.spec_mod_transition_cost *
              _get_spec_stationarity()) + (params.amp_mod_transition_cost /
-             _get_rms_ratio()))
+             _get_rms_ratio(sample_rate)))
     return prev_cost + delta
 
 
 # spectral stationarity function, denoted as S_i in the delta formulas:
 def _get_spec_stationarity():
-    return 1
+    # TODO: Figure out how to calculate this:
+    itakura_distortion = 1
+    return_val = 0.2 / (itakura_distortion - 0.8)
+    return return_val
 
 
 # RMS ratio, denoted as rr_i in the delta formulas:
-def _get_rms_ratio():
-    return 1
+def _get_rms_ratio(sample_rate):
+    # TODO: Need to pass in audio input here - used when calcing rms ratio
+    window_length = 0.03 * sample_rate
+    hanning_window_vals = numpy.hanning(window_length)
+    # use range(0,window_length) for sigma/summation (effectivey 0 to J-1)
+    rms_curr = math.sqrt(sum(w**2 for w in hanning_window_vals) / window_length)
+    rms_prev = math.sqrt(sum(w**2 for w in hanning_window_vals) / window_length)
+    return (rms_curr / rms_prev)

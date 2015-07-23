@@ -117,7 +117,7 @@ class TestPostProcessingMethods(TestCase):
             params.spec_mod_transition_cost = 5.0
             params.amp_mod_transition_cost = 2.0
             cost = pyrapt._get_voiced_to_unvoiced_cost(candidate, prev_entry,
-                                                       params)
+                                                       params, 44100)
             self.assertEqual(19.373, cost)
 
     @patch('pyrapt.pyrapt._get_spec_stationarity')
@@ -132,5 +132,13 @@ class TestPostProcessingMethods(TestCase):
             params.spec_mod_transition_cost = 5.0
             params.amp_mod_transition_cost = 4.0
             cost = pyrapt._get_unvoiced_to_voiced_cost(candidate, prev_entry,
-                                                       params)
+                                                       params, 44100)
             self.assertEqual(17.373, cost)
+
+    def test_spec_stationarity(self):
+        result = pyrapt._get_spec_stationarity()
+        self.assertAlmostEqual(1.0, result)
+
+    def test_rms_ratio(self):
+        result = pyrapt._get_rms_ratio(44100)
+        self.assertEqual(1.0, result)
