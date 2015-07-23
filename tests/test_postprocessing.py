@@ -53,13 +53,17 @@ class TestPostProcessingMethods(TestCase):
         raptparam = raptparams.Raptparams()
         nccf_results = [[(172, 0.5423), (770, 0.6772)]] * 166
         with patch('pyrapt.pyrapt._calculate_local_cost') as mock_local:
-            candidates = pyrapt._calculate_costs_per_frame(100, [],
-                                                           nccf_results,
-                                                           raptparam, 44100)
-            self.assertEqual(2, len(candidates))
-            mock_max_for_frame.assert_called_once_with([(172, 0.5423),
-                                                        (770, 0.6772)])
-            mock_local.assert_called_with(ANY, 0.6772, raptparam, 44100)
+            with patch('pyrapt.pyrapt._get_best_cost') as mock_best:
+                mock_local.return_value = 25
+                mock_best.return_value = 75
+                candidates = pyrapt._calculate_costs_per_frame(100, [],
+                                                               nccf_results,
+                                                               raptparam, 44100)
+                self.assertEqual(2, len(candidates))
+                mock_max_for_frame.assert_called_once_with([(172, 0.5423),
+                                                            (770, 0.6772)])
+                mock_local.assert_called_with(ANY, 0.6772, raptparam, 44100)
+                mock_best.assert_called_with(ANY, ANY, [], raptparam, 44100)
 
     def test_select_max_correlation(self):
         nccf_results_frame = [(172, 0.5423), (235, 0.682), (422, 0.51),
@@ -82,3 +86,37 @@ class TestPostProcessingMethods(TestCase):
         cost = pyrapt._calculate_local_cost((0, 0.0), max_corr_for_frame,
                                             raptparam, sample_rate)
         self.assertEqual(10.682, cost)
+
+    def test_get_best_cost(self):
+        candidate = (172, 0.542)
+        params = raptparams.Raptparams()
+        cost = pyrapt._get_best_cost(candidate, 25, [], params, 44100)
+        self.assertEqual(25, cost)
+
+    def test_voiced_to_voiced(self):
+        candidate = (709, 0.733)
+        prev_entry = (0.373, (650, 0.841))
+        params = raptparams.Raptparams()
+        cost = pyrapt._get_voiced_to_voiced_cost(candidate, prev_entry, params)
+        self.assertEqual(0.39212528033835004, cost)
+
+    def test_unvoiced_to_unvoiced(self):
+        prev_entry = (0.373, (0, 0.0))
+        cost = pyrapt._get_unvoiced_to_unvoiced_cost(prev_entry)
+        self.assertEqual(0.373, cost)
+
+    def test_voiced_to_unvoiced(self):
+        candidate = (709, 0.733)
+        prev_entry = (0.373, (650, 0.841))
+        params = raptparams.Raptparams()
+        cost = pyrapt._get_voiced_to_unvoiced_cost(candidate, prev_entry,
+                                                   params)
+        self.assertEqual(0.373, cost)
+
+    def test_unvoiced_to_voiced(self):
+        candidate = (709, 0.733)
+        prev_entry = (0.373, (650, 0.841))
+        params = raptparams.Raptparams()
+        cost = pyrapt._get_unvoiced_to_voiced_cost(candidate, prev_entry,
+                                                   params)
+        self.assertEqual(0.373, cost)
