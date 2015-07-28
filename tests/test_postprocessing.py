@@ -105,39 +105,33 @@ class TestPostProcessingMethods(TestCase):
         cost = pyrapt._get_unvoiced_to_unvoiced_cost(prev_entry)
         self.assertEqual(0.373, cost)
 
-    @patch('pyrapt.pyrapt._get_spec_stationarity')
-    def test_voiced_to_unvoiced(self, mock_spec_stationarity):
-        with patch('pyrapt.pyrapt._get_rms_ratio') as mock_rms:
-            mock_spec_stationarity.return_value = 1.0
-            mock_rms.return_value = 2.0
-            candidate = (709, 0.733)
-            prev_entry = (0.373, (650, 0.841))
-            params = raptparams.Raptparams()
-            params.transition_cost = 10.0
-            params.spec_mod_transition_cost = 5.0
-            params.amp_mod_transition_cost = 2.0
-            cost = pyrapt._get_voiced_to_unvoiced_cost(candidate, prev_entry,
-                                                       params, 44100)
-            self.assertEqual(19.373, cost)
+    @patch('pyrapt.pyrapt._get_rms_ratio')
+    def test_voiced_to_unvoiced(self, mock_rms):
+        mock_rms.return_value = 2.0
+        candidate = (709, 0.733)
+        prev_entry = (0.373, (650, 0.841))
+        params = raptparams.Raptparams()
+        params.transition_cost = 10.0
+        params.amp_mod_transition_cost = 4.0
+        cost = pyrapt._get_voiced_to_unvoiced_cost(candidate, prev_entry,
+                                                   params, 44100)
+        self.assertEqual(18.373, cost)
 
-    @patch('pyrapt.pyrapt._get_spec_stationarity')
-    def test_unvoiced_to_voiced(self, mock_spec_stationarity):
-        with patch('pyrapt.pyrapt._get_rms_ratio') as mock_rms:
-            mock_spec_stationarity.return_value = 1.0
-            mock_rms.return_value = 2.0
-            candidate = (709, 0.733)
-            prev_entry = (0.373, (650, 0.841))
-            params = raptparams.Raptparams()
-            params.transition_cost = 10.0
-            params.spec_mod_transition_cost = 5.0
-            params.amp_mod_transition_cost = 4.0
-            cost = pyrapt._get_unvoiced_to_voiced_cost(candidate, prev_entry,
-                                                       params, 44100)
-            self.assertEqual(17.373, cost)
+    @patch('pyrapt.pyrapt._get_rms_ratio')
+    def test_unvoiced_to_voiced(self, mock_rms):
+        mock_rms.return_value = 2.0
+        candidate = (709, 0.733)
+        prev_entry = (0.373, (650, 0.841))
+        params = raptparams.Raptparams()
+        params.transition_cost = 10.0
+        params.amp_mod_transition_cost = 4.0
+        cost = pyrapt._get_unvoiced_to_voiced_cost(candidate, prev_entry,
+                                                   params, 44100)
+        self.assertEqual(12.373, cost)
 
-    def test_spec_stationarity(self):
-        result = pyrapt._get_spec_stationarity()
-        self.assertAlmostEqual(1.0, result)
+    # def test_spec_stationarity(self):
+    #    result = pyrapt._get_spec_stationarity()
+    #    self.assertAlmostEqual(1.0, result)
 
     def test_rms_ratio(self):
         result = pyrapt._get_rms_ratio(44100)
