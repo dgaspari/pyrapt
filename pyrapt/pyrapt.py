@@ -31,6 +31,9 @@ def rapt(wavfile_path, **kwargs):
 
     raptparam.sample_rate_ratio = (float(original_audio[0]) /
                                    float(downsampled_audio[0]))
+    raptparam.original_audio = original_audio
+    raptparam.samples_per_frame = int(raptparam.frame_step_size *
+                                      original_audio[0])
 
     nccf_results = _run_nccf(downsampled_audio, original_audio, raptparam)
 
@@ -516,7 +519,7 @@ def _get_voiced_to_unvoiced_cost(candidate, prev_entry, params, sample_rate):
     #         _get_spec_stationarity()) + (params.amp_mod_transition_cost *
     #         _get_rms_ratio(sample_rate)))
     delta = (params.transition_cost + (params.amp_mod_transition_cost *
-             _get_rms_ratio(sample_rate)))
+             _get_rms_ratio(params)))
     return prev_cost + delta
 
 
@@ -528,7 +531,7 @@ def _get_unvoiced_to_voiced_cost(candidate, prev_entry, params, sample_rate):
     #         _get_spec_stationarity()) + (params.amp_mod_transition_cost /
     #         _get_rms_ratio(sample_rate)))
     delta = (params.transition_cost + (params.amp_mod_transition_cost /
-             _get_rms_ratio(sample_rate)))
+             _get_rms_ratio(params)))
     return prev_cost + delta
 
 
@@ -542,11 +545,15 @@ def _get_spec_stationarity():
 
 
 # RMS ratio, denoted as rr_i in the delta formulas:
-def _get_rms_ratio(sample_rate):
+def _get_rms_ratio(params):
     # TODO: Need to pass in audio input here - used when calcing rms ratio
-    window_length = 0.03 * sample_rate
+    window_length = int(0.03 * params.original_audio[0])
     hanning_window_vals = numpy.hanning(window_length)
     # use range(0,window_length) for sigma/summation (effectivey 0 to J-1)
-    rms_curr = math.sqrt(sum(w**2 for w in hanning_window_vals) / window_length)
-    rms_prev = math.sqrt(sum(w**2 for w in hanning_window_vals) / window_length)
+    rms_curr = math.sqrt(sum((hanning_window_vals[j] *
+                             params.original_audio[1][j])**2 for j in
+                             xrange(0, window_length)) / window_length)
+    rms_prev = math.sqrt(sum((hanning_window_vals[j] *
+                             params.original_audio[1][j])**2 for j in
+                             xrange(0, window_length)) / window_length)
     return (rms_curr / rms_prev)

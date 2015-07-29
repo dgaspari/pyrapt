@@ -53,3 +53,9 @@ class Raptparams:
 
         # sample rate ratio used to extrapolate 1st pass lags onto 2nd pass:
         self.sample_rate_ratio = None
+
+        # audio being analyzed (tuple, the first item is sample rate)
+        self.original_audio = None
+
+        # frame step size (z in RAPT equations)
+        self.samples_per_frame = None
