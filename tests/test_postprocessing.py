@@ -149,11 +149,13 @@ class TestPostProcessingMethods(TestCase):
         # now test one where amp is increasing (rms ratio should be > 1)
         increasing_audio = [2.0] * 73000
         increasing_audio[540:600] = [4.0] * 60
+        params.original_audio = (2000, increasing_audio)
         result = pyrapt._get_rms_ratio(100, params)
         self.assertGreater(result, 1.0)
         # now test where amp is decreasing (rms ratio should be btwn 0 and 1)
         decreasing_audio = [2.0] * 73000
         decreasing_audio[540:600] = [1.0] * 60
+        params.original_audio = (2000, decreasing_audio)
         result = pyrapt._get_rms_ratio(100, params)
         self.assertGreater(result, 0.0)
         self.assertLess(result, 1.0)
