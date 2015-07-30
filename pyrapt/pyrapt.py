@@ -420,7 +420,8 @@ def _determine_state_per_frame(nccf_results, raptparam, sample_rate):
 
     # with the results, take the lag of the lowest cost candidate per frame
     for result in all_candidates:
-        candidates.append(result[0][1][0])
+        # sort results - the first value, the cost, is used by default
+        candidates.append(sorted(result)[0][1][0])
     return candidates
 
 
