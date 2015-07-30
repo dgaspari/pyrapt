@@ -64,7 +64,7 @@ class TestPostProcessingMethods(TestCase):
                 mock_max_for_frame.assert_called_once_with([(172, 0.5423),
                                                             (770, 0.6772)])
                 mock_local.assert_called_with(ANY, 0.6772, raptparam, 44100)
-                mock_best.assert_called_with(ANY, ANY, [], raptparam)
+                mock_best.assert_called_with(ANY, ANY, [], 100, raptparam)
 
     def test_select_max_correlation(self):
         nccf_results_frame = [(172, 0.5423), (235, 0.682), (422, 0.51),
@@ -88,12 +88,51 @@ class TestPostProcessingMethods(TestCase):
                                             raptparam, sample_rate)
         self.assertEqual(10.682, cost)
 
-    def test_get_best_cost(self):
+    @patch('pyrapt.pyrapt._get_delta_cost')
+    def test_get_best_cost(self, mock_delta):
+        mock_delta.return_value = 25
         candidate = (172, 0.542)
         params = raptparams.Raptparams()
         params.original_audio = (44100, [2.0] * 73000)
-        cost = pyrapt._get_best_cost(candidate, 25, [], params)
-        self.assertEqual(25, cost)
+        cost = pyrapt._get_best_cost(candidate, 25, [], 100, params)
+        self.assertEqual(50, cost)
+
+    def test_get_delta_cost(self):
+        cand1 = (172, 0.542)
+        cand2 = (0, 0.0)
+        prev_cand1 = (10, (215, 0.211))
+        prev_cand2 = (10, (0, 0.0))
+        params = raptparams.Raptparams()
+        with patch('pyrapt.pyrapt._get_unvoiced_to_unvoiced_cost') as mok_cost1:
+            mok_cost1.return_value = 5
+            cost = pyrapt._get_delta_cost(cand2, prev_cand2, 25, params)
+            self.assertEquals(5, cost)
+            mok_cost1.assert_called_once_with(prev_cand2)
+        with patch('pyrapt.pyrapt._get_voiced_to_unvoiced_cost') as mok_cost2:
+            mok_cost2.return_value = 10
+            cost = pyrapt._get_delta_cost(cand2, prev_cand1, 25, params)
+            self.assertEquals(10, cost)
+            mok_cost2.assert_called_once_with(cand2, prev_cand1, 25, params)
+        with patch('pyrapt.pyrapt._get_unvoiced_to_voiced_cost') as mok_cost3:
+            mok_cost3.return_value = 15
+            cost = pyrapt._get_delta_cost(cand1, prev_cand2, 25, params)
+            self.assertEquals(15, cost)
+            mok_cost3.assert_called_once_with(cand1, prev_cand2, 25, params)
+        with patch('pyrapt.pyrapt._get_voiced_to_voiced_cost') as mok_cost4:
+            mok_cost4.return_value = 25
+            cost = pyrapt._get_delta_cost(cand1, prev_cand1, 25, params)
+            self.assertEquals(25, cost)
+            mok_cost4.assert_called_once_with(cand1, prev_cand1, params)
+
+    def test_is_unvoiced(self):
+        voiced_cand = (172, 0.542)
+        unvoiced_cand = (0, 0.0)
+        partial_cand1 = (0, 0.672)
+        partial_cand2 = (215, 0.0)
+        self.assertTrue(pyrapt._is_unvoiced(unvoiced_cand))
+        self.assertFalse(pyrapt._is_unvoiced(voiced_cand))
+        self.assertFalse(pyrapt._is_unvoiced(partial_cand1))
+        self.assertFalse(pyrapt._is_unvoiced(partial_cand2))
 
     def test_voiced_to_voiced(self):
         candidate = (709, 0.733)

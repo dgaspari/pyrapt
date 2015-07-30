@@ -447,7 +447,7 @@ def _calculate_costs_per_frame(frame_idx, new_candidates, nccf_results, params,
         local_cost = _calculate_local_cost(candidate, max_for_frame, params,
                                            sample_rate)
         best_cost = _get_best_cost(candidate, local_cost, new_candidates,
-                                   params)
+                                   frame_idx, params)
         frame_candidates.append((best_cost, candidate))
     return frame_candidates
 
@@ -476,21 +476,51 @@ def _calculate_local_cost(candidate, max_corr_for_frame, params, sample_rate):
     return cost
 
 
-# TODO: Finish logic for this method - have it determine the delta cost of
-# transition from each previous frame and pick the cheapest
-def _get_best_cost(candidate, local_cost, candidate_list,  params):
+# Determine the delta cost for each previous candidate and pick the cheapest
+def _get_best_cost(candidate, local_cost, candidate_list, frame_idx, params):
     # need to determine best transition cost based on previous frame:
-    return_cost = 0
+    return_cost = None
     # first check to see if list is empty (we are at beginning and can use
     # predefined vals for transition costs
     if not candidate_list:
-        return_cost = local_cost + 0
+        # global cost is 0 for voiced/unvoiced - just transition costs matter
+        for initial_candidate in [(0.0, (1, 0.1)), (0.0, (0, 0.0))]:
+            delta_cost = _get_delta_cost(candidate, initial_candidate,
+                                         frame_idx, params)
+            total_cost = local_cost + delta_cost
+            if return_cost is None or total_cost < return_cost:
+                return_cost = total_cost
     # if prev candidates exist, then we need to check each with a transition
     # cost and see which is the lowest
     else:
         for prev_candidate in candidate_list[-1]:
-            return_cost = local_cost + 0
+            delta_cost = _get_delta_cost(candidate, prev_candidate,
+                                         frame_idx, params)
+            total_cost = local_cost + delta_cost
+            if return_cost is None or total_cost < return_cost:
+                return_cost = total_cost
     return return_cost
+
+
+# determine what type of transition for candidate and previous, and return delta
+def _get_delta_cost(candidate, prev_candidate, frame_idx, params):
+    # determine what type of transition:
+    if _is_unvoiced(candidate) and _is_unvoiced(prev_candidate[1]):
+        return _get_unvoiced_to_unvoiced_cost(prev_candidate)
+    elif _is_unvoiced(candidate):
+        return _get_voiced_to_unvoiced_cost(candidate, prev_candidate,
+                                            frame_idx, params)
+    elif _is_unvoiced(prev_candidate[1]):
+        return _get_unvoiced_to_voiced_cost(candidate, prev_candidate,
+                                            frame_idx, params)
+    else:
+        return _get_voiced_to_voiced_cost(candidate, prev_candidate, params)
+
+
+# for a candidate tuple w/ lag and correlation value, determine if it is a
+# placeholder for unvoiced hypothesis
+def _is_unvoiced(candidate):
+    return candidate[0] == 0 and candidate[1] == 0.0
 
 
 # determines cost of voiced to voice delta w/ prev entry's global cost:
