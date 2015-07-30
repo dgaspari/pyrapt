@@ -583,6 +583,14 @@ def _get_rms_ratio(frame_idx, params):
     offset = int((float(params.original_audio[0]) / 1000.0) * 20.0)
     curr_frame_start = frame_idx * params.samples_per_frame
     prev_frame_start = (frame_idx - 1) * params.samples_per_frame
+    # TODO: determine if this adjustment is appropriate:
+    # because of the offset we might go beyond the array of samples, so set
+    # limit here:
+    max_window_diff = (len(params.original_audio[1]) - (curr_frame_start +
+                       offset + window_length))
+    if max_window_diff < 0:
+        window_length += max_window_diff
+
     hanning_window_vals = numpy.hanning(window_length)
     # use range(0,window_length) for sigma/summation (effectivey 0 to J-1)
     curr_sum = sum((hanning_window_vals[j] *
