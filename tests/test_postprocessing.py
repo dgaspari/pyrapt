@@ -51,6 +51,7 @@ class TestPostProcessingMethods(TestCase):
     def test_calculate_cost_per_frame(self, mock_max_for_frame):
         mock_max_for_frame.return_value = 0.6772
         raptparam = raptparams.Raptparams()
+        raptparam = (44100, [2.0] * 73000)
         nccf_results = [[(172, 0.5423), (770, 0.6772)]] * 166
         with patch('pyrapt.pyrapt._calculate_local_cost') as mock_local:
             with patch('pyrapt.pyrapt._get_best_cost') as mock_best:
@@ -63,7 +64,7 @@ class TestPostProcessingMethods(TestCase):
                 mock_max_for_frame.assert_called_once_with([(172, 0.5423),
                                                             (770, 0.6772)])
                 mock_local.assert_called_with(ANY, 0.6772, raptparam, 44100)
-                mock_best.assert_called_with(ANY, ANY, [], raptparam, 44100)
+                mock_best.assert_called_with(ANY, ANY, [], raptparam)
 
     def test_select_max_correlation(self):
         nccf_results_frame = [(172, 0.5423), (235, 0.682), (422, 0.51),
@@ -90,7 +91,8 @@ class TestPostProcessingMethods(TestCase):
     def test_get_best_cost(self):
         candidate = (172, 0.542)
         params = raptparams.Raptparams()
-        cost = pyrapt._get_best_cost(candidate, 25, [], params, 44100)
+        params.original_audio = (44100, [2.0] * 73000)
+        cost = pyrapt._get_best_cost(candidate, 25, [], params)
         self.assertEqual(25, cost)
 
     def test_voiced_to_voiced(self):
@@ -114,8 +116,8 @@ class TestPostProcessingMethods(TestCase):
         params.transition_cost = 10.0
         params.amp_mod_transition_cost = 4.0
         cost = pyrapt._get_voiced_to_unvoiced_cost(candidate, prev_entry,
-                                                   params, 44100)
-        mock_rms.assert_called_once_with(params)
+                                                   100, params)
+        mock_rms.assert_called_once_with(100, params)
         self.assertEqual(18.373, cost)
 
     @patch('pyrapt.pyrapt._get_rms_ratio')
@@ -127,8 +129,8 @@ class TestPostProcessingMethods(TestCase):
         params.transition_cost = 10.0
         params.amp_mod_transition_cost = 4.0
         cost = pyrapt._get_unvoiced_to_voiced_cost(candidate, prev_entry,
-                                                   params, 44100)
-        mock_rms.assert_called_once_with(params)
+                                                   100, params)
+        mock_rms.assert_called_once_with(100, params)
         self.assertEqual(12.373, cost)
 
     # def test_spec_stationarity(self):
@@ -136,7 +138,22 @@ class TestPostProcessingMethods(TestCase):
     #    self.assertAlmostEqual(1.0, result)
 
     def test_rms_ratio(self):
+        # TODO: mock hanning window vals
+        # start with basic test - if samples are all the same the frames will
+        # match exactly and rms ratio will just be 1
         params = raptparams.Raptparams()
-        params.original_audio = (44100, [2.0] * 73000)
-        result = pyrapt._get_rms_ratio(params)
+        params.original_audio = (2000, [2.0] * 73000)
+        params.samples_per_frame = 5
+        result = pyrapt._get_rms_ratio(100, params)
         self.assertEqual(1.0, result)
+        # now test one where amp is increasing (rms ratio should be > 1)
+        increasing_audio = [2.0] * 73000
+        increasing_audio[540:600] = [4.0] * 60
+        result = pyrapt._get_rms_ratio(100, params)
+        self.assertGreater(result, 1.0)
+        # now test where amp is decreasing (rms ratio should be btwn 0 and 1)
+        decreasing_audio = [2.0] * 73000
+        decreasing_audio[540:600] = [1.0] * 60
+        result = pyrapt._get_rms_ratio(100, params)
+        self.assertGreater(result, 0.0)
+        self.assertLess(result, 1.0)

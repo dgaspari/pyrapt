@@ -447,7 +447,7 @@ def _calculate_costs_per_frame(frame_idx, new_candidates, nccf_results, params,
         local_cost = _calculate_local_cost(candidate, max_for_frame, params,
                                            sample_rate)
         best_cost = _get_best_cost(candidate, local_cost, new_candidates,
-                                   params, sample_rate)
+                                   params)
         frame_candidates.append((best_cost, candidate))
     return frame_candidates
 
@@ -478,7 +478,7 @@ def _calculate_local_cost(candidate, max_corr_for_frame, params, sample_rate):
 
 # TODO: Finish logic for this method - have it determine the delta cost of
 # transition from each previous frame and pick the cheapest
-def _get_best_cost(candidate, local_cost, candidate_list,  params, sample_rate):
+def _get_best_cost(candidate, local_cost, candidate_list,  params):
     # need to determine best transition cost based on previous frame:
     return_cost = 0
     # first check to see if list is empty (we are at beginning and can use
@@ -511,7 +511,7 @@ def _get_unvoiced_to_unvoiced_cost(prev_entry):
     return prev_entry[0] + 0.0
 
 
-def _get_voiced_to_unvoiced_cost(candidate, prev_entry, params, sample_rate):
+def _get_voiced_to_unvoiced_cost(candidate, prev_entry, frame_idx, params):
     prev_cost = prev_entry[0]
     # prev_candidate = prev_entry[1]
     # NOTE: Not using spec_mod / itakura distortion for delta cost
@@ -519,11 +519,11 @@ def _get_voiced_to_unvoiced_cost(candidate, prev_entry, params, sample_rate):
     #         _get_spec_stationarity()) + (params.amp_mod_transition_cost *
     #         _get_rms_ratio(sample_rate)))
     delta = (params.transition_cost + (params.amp_mod_transition_cost *
-             _get_rms_ratio(params)))
+             _get_rms_ratio(frame_idx, params)))
     return prev_cost + delta
 
 
-def _get_unvoiced_to_voiced_cost(candidate, prev_entry, params, sample_rate):
+def _get_unvoiced_to_voiced_cost(candidate, prev_entry, frame_idx, params):
     prev_cost = prev_entry[0]
     # prev_candidate = prev_entry[1]
     # NOTE: Not using spec_mod / itakura distortion for delta cost
@@ -531,7 +531,7 @@ def _get_unvoiced_to_voiced_cost(candidate, prev_entry, params, sample_rate):
     #         _get_spec_stationarity()) + (params.amp_mod_transition_cost /
     #         _get_rms_ratio(sample_rate)))
     delta = (params.transition_cost + (params.amp_mod_transition_cost /
-             _get_rms_ratio(params)))
+             _get_rms_ratio(frame_idx, params)))
     return prev_cost + delta
 
 
@@ -545,15 +545,21 @@ def _get_spec_stationarity():
 
 
 # RMS ratio, denoted as rr_i in the delta formulas:
-def _get_rms_ratio(params):
-    # TODO: Need to pass in audio input here - used when calcing rms ratio
+def _get_rms_ratio(frame_idx, params):
     window_length = int(0.03 * params.original_audio[0])
+    # TODO: calculate this in raptparams ahead of time? only need to do once:
+    # h in rms ratio calculation - figure out how many samples in 20 ms
+    offset = int((float(params.original_audio[0]) / 1000.0) * 20.0)
+    curr_frame_start = frame_idx * params.samples_per_frame
+    prev_frame_start = (frame_idx - 1) * params.samples_per_frame
     hanning_window_vals = numpy.hanning(window_length)
     # use range(0,window_length) for sigma/summation (effectivey 0 to J-1)
-    rms_curr = math.sqrt(sum((hanning_window_vals[j] *
-                             params.original_audio[1][j])**2 for j in
-                             xrange(0, window_length)) / window_length)
-    rms_prev = math.sqrt(sum((hanning_window_vals[j] *
-                             params.original_audio[1][j])**2 for j in
-                             xrange(0, window_length)) / window_length)
+    curr_sum = sum((hanning_window_vals[j] *
+                   params.original_audio[1][curr_frame_start + j + offset])**2
+                   for j in xrange(0, window_length))
+    rms_curr = math.sqrt(float(curr_sum) / float(window_length))
+    prev_sum = sum((hanning_window_vals[j] *
+                   params.original_audio[1][prev_frame_start + j - offset])**2
+                   for j in xrange(0, window_length))
+    rms_prev = math.sqrt(float(prev_sum) / float(window_length))
     return (rms_curr / rms_prev)
