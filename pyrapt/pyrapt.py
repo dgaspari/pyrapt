@@ -363,6 +363,8 @@ def _get_nccf_denominator_val(audio, frame_start, starting_val, nccfparam,
     return total_sum
 
 
+# TODO: Try and get peaks instead of just taking the basic lag value, but
+# don't introduce wildly different lag values.
 def _get_peak_lag_val(lag_results, lag_index, params):
     current_lag = lag_index + params[1].shortest_lag_per_frame
     extrapolated_lag = int(current_lag * params[0].sample_rate_ratio)
