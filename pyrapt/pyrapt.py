@@ -364,31 +364,31 @@ def _get_nccf_denominator_val(audio, frame_start, starting_val, nccfparam,
 
 
 def _get_peak_lag_val(lag_results, lag_index, params):
-    # current_lag = lag_index + params[1].shortest_lag_per_frame
-    # extrapolated_lag = int(current_lag * params[0].sample_rate_ratio)
-    # return (extrapolated_lag, lag_results[lag_index])
+    current_lag = lag_index + params[1].shortest_lag_per_frame
+    extrapolated_lag = int(current_lag * params[0].sample_rate_ratio)
+    return (extrapolated_lag, lag_results[lag_index])
 
     # lag peak is the maxima of a given peak obtained by results
-    lag_peak = lag_index + params[1].shortest_lag_per_frame
-    x_vals = []
-    y_vals = []
+    # lag_peak = lag_index + params[1].shortest_lag_per_frame
+    # x_vals = []
+    # y_vals = []
 
-    if lag_index == 0:
-        y_vals = lag_results[lag_index:lag_index + 3]
-        x_vals = range(lag_peak, lag_peak+3)
-    elif lag_index == (len(lag_results)-1):
-        y_vals = lag_results[lag_index-2:lag_index+1]
-        x_vals = range(lag_peak-2, lag_peak+1)
-    else:
-        y_vals = lag_results[lag_index-1:lag_index+2]
-        x_vals = range(lag_peak-1, lag_peak+2)
+    # if lag_index == 0:
+    #    y_vals = lag_results[lag_index:lag_index + 3]
+    #    x_vals = range(lag_peak, lag_peak+3)
+    # elif lag_index == (len(lag_results)-1):
+    #    y_vals = lag_results[lag_index-2:lag_index+1]
+    #    x_vals = range(lag_peak-2, lag_peak+1)
+    # else:
+    #    y_vals = lag_results[lag_index-1:lag_index+2]
+    #    x_vals = range(lag_peak-1, lag_peak+2)
 
-    parabolic_func = numpy.polyfit(x_vals, y_vals, 2)
+    # parabolic_func = numpy.polyfit(x_vals, y_vals, 2)
     # return maxima of the parabola, shifted to appropriate lag value
-    lag_peak = -parabolic_func[1] / (2 * parabolic_func[0])
-    lag_peak = round(lag_peak * params[0].sample_rate_ratio)
-    lag_peak = int(lag_peak)
-    return (lag_peak, lag_results[lag_index])
+    # lag_peak = -parabolic_func[1] / (2 * parabolic_func[0])
+    # lag_peak = round(lag_peak * params[0].sample_rate_ratio)
+    # lag_peak = int(lag_peak)
+    # return (lag_peak, lag_results[lag_index])
 
 
 # Dynamic Programming / Post-Processing:
