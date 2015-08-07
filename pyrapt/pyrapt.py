@@ -29,18 +29,15 @@ def rapt(wavfile_path, **kwargs):
     original_audio = (original_audio[0], original_audio[1].tolist())
     downsampled_audio = (downsampled_audio[0], downsampled_audio[1].tolist())
 
-    raptparam.sample_rate_ratio = (float(original_audio[0]) /
-                                   float(downsampled_audio[0]))
-    raptparam.original_audio = original_audio
-    raptparam.samples_per_frame = int(raptparam.frame_step_size *
-                                      original_audio[0])
+    # calculate parameters for RAPT with input audio
+    _calculate_params(raptparam, original_audio, downsampled_audio)
 
+    # get f0 candidates using nccf
     nccf_results = _run_nccf(downsampled_audio, original_audio, raptparam)
 
     # Dynamic programming - determine voicing state at each period candidate
     freq_estimate = _get_freq_estimate(nccf_results, raptparam,
                                        original_audio[0])
-
     # return output of nccf for now
     return freq_estimate
 
@@ -52,6 +49,16 @@ def _setup_rapt_params(kwargs):
         for key, value in kwargs.items():
             setattr(params, key, value)
     return params
+
+
+def _calculate_params(param, original_audio, downsampled_audio):
+    param.sample_rate_ratio = (float(original_audio[0]) /
+                               float(downsampled_audio[0]))
+    param.original_audio = original_audio
+    param.samples_per_frame = int(param.frame_step_size * original_audio[0])
+    param.hanning_window_length = int(0.03 * original_audio[0])
+    param.hanning_window_vals = numpy.hanning(param.hanning_window_length)
+    param.rms_offset = int((float(original_audio[0]) / 1000.0) * 20.0)
 
 
 def _get_audio_data(wavfile_path):
@@ -579,28 +586,25 @@ def _get_spec_stationarity():
 
 # RMS ratio, denoted as rr_i in the delta formulas:
 def _get_rms_ratio(frame_idx, params):
-    window_length = int(0.03 * params.original_audio[0])
-    # TODO: calculate this in raptparams ahead of time? only need to do once:
-    # h in rms ratio calculation - figure out how many samples in 20 ms
-    offset = int((float(params.original_audio[0]) / 1000.0) * 20.0)
     curr_frame_start = frame_idx * params.samples_per_frame
     prev_frame_start = (frame_idx - 1) * params.samples_per_frame
     # TODO: determine if this adjustment is appropriate:
     # because of the offset we might go beyond the array of samples, so set
     # limit here:
     max_window_diff = (len(params.original_audio[1]) - (curr_frame_start +
-                       offset + window_length))
+                       params.rms_offset + params.hanning_window_length))
     if max_window_diff < 0:
-        window_length += max_window_diff
+        params.hanning_window_length += max_window_diff
 
-    hanning_window_vals = numpy.hanning(window_length)
     # use range(0,window_length) for sigma/summation (effectivey 0 to J-1)
-    curr_sum = sum((hanning_window_vals[j] *
-                   params.original_audio[1][curr_frame_start + j + offset])**2
-                   for j in xrange(0, window_length))
-    rms_curr = math.sqrt(float(curr_sum) / float(window_length))
-    prev_sum = sum((hanning_window_vals[j] *
-                   params.original_audio[1][prev_frame_start + j - offset])**2
-                   for j in xrange(0, window_length))
-    rms_prev = math.sqrt(float(prev_sum) / float(window_length))
+    curr_sum = sum((params.hanning_window_vals[j] *
+                   params.original_audio[1][curr_frame_start + j +
+                   params.rms_offset])**2
+                   for j in xrange(0, params.hanning_window_length))
+    rms_curr = math.sqrt(float(curr_sum) / float(params.hanning_window_length))
+    prev_sum = sum((params.hanning_window_vals[j] *
+                   params.original_audio[1][prev_frame_start + j -
+                   params.rms_offset])**2
+                   for j in xrange(0, params.hanning_window_length))
+    rms_prev = math.sqrt(float(prev_sum) / float(params.hanning_window_length))
     return (rms_curr / rms_prev)

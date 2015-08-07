@@ -4,7 +4,7 @@ Unit tests for postprocessing dynamic programming steps used by rapt
 from unittest import TestCase
 from mock import patch
 from mock import ANY
-
+import numpy
 from pyrapt import pyrapt
 from pyrapt import raptparams
 
@@ -183,6 +183,9 @@ class TestPostProcessingMethods(TestCase):
         params = raptparams.Raptparams()
         params.original_audio = (2000, [2.0] * 73000)
         params.samples_per_frame = 5
+        params.hanning_window_length = 60
+        params.hanning_window_vals = numpy.hanning(60)
+        params.rms_offset = 40
         result = pyrapt._get_rms_ratio(100, params)
         self.assertEqual(1.0, result)
         # now test one where amp is increasing (rms ratio should be > 1)

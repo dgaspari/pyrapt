@@ -51,6 +51,9 @@ class Raptparams:
         # Value of VTR_S_C used when calculating voicing state:
         self.spec_mod_transition_cost = 0.5
 
+        # Below are fields populated by calculate_params method based on
+        # audio inputs. There is no default value set for these:
+
         # sample rate ratio used to extrapolate 1st pass lags onto 2nd pass:
         self.sample_rate_ratio = None
 
@@ -59,3 +62,12 @@ class Raptparams:
 
         # frame step size (z in RAPT equations)
         self.samples_per_frame = None
+
+        # hanning window length (used in RMS ratio calc for post processing)
+        self.hanning_window_length = None
+
+        # hanning window (actual values, used in RMS ratio calc)
+        self.hanning_window_vals = None
+
+        # value of h in rms ratio calc, used for + or - 20 ms offset
+        self.rms_offset = None
