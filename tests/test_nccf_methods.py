@@ -204,42 +204,26 @@ class TestNccfMethods(TestCase):
     # TODO: verify frame summation is happening correctly
     @patch('pyrapt.pyrapt._get_nccf_denominator_val')
     def test_get_correlation(self, mock_denominator):
-        audio = (10, numpy.array([0, 1, 2, 3, 4, 5]))
+        audio = (10, numpy.array([0, 1, 2, 3, 4, 5, 6, 7]))
         params = (raptparams.Raptparams(), nccfparams.Nccfparams())
         params[1].samples_per_frame = 2
         params[1].samples_correlated_per_lag = 5
         mock_denominator.return_value = 2.0
-        with patch('pyrapt.pyrapt._get_sample') as mock_sample:
-            mock_sample.return_value = 4.0
-            correlation = pyrapt._get_correlation(audio, 0, 0, params)
-            self.assertEqual(40.0, correlation)
-            # Now try with additive constant added in denominator
-            # (only added for 2nd pass NCCF calc)
-            params[0].additive_constant = 12
-            correlation = pyrapt._get_correlation(audio, 0, 0, params, False)
-            self.assertEqual(20.0, correlation)
+        # mock_sample.return_value = 4.0
+        correlation = pyrapt._get_correlation(audio, 0, 1, params)
+        self.assertEqual(5.0, correlation)
+        # Now try with additive constant added in denominator
+        # (only added for 2nd pass NCCF calc)
+        params[0].additive_constant = 12
+        correlation = pyrapt._get_correlation(audio, 0, 1, params, False)
+        self.assertEqual(2.5, correlation)
 
-    def test_get_sample(self):
-        param = nccfparams.Nccfparams()
-        param.samples_correlated_per_lag = 5
-        param.samples_per_frame = 1
-        audio_data = (10, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-        # frame sum is sum of samples from frame start to samples per lag
-        sample = pyrapt._get_sample(audio_data, 1, 5, param, 3.0)
-        self.assertEqual(3.0, sample)
-
-    @patch('pyrapt.pyrapt._get_sample')
-    def test_denominator(self, mock_get_signal):
-        audio_data = (100, numpy.ones(1000))
-        param = nccfparams.Nccfparams()
-        param.samples_correlated_per_lag = 4
-        mock_get_signal.return_value = 5.0
-        returned = pyrapt._get_nccf_denominator_val(audio_data, 0, 1, param, 4)
-        self.assertEqual(100.0, returned)
-        param.samples_correlated_per_lag = 3
-        mock_get_signal.return_value = 2.0
-        returned = pyrapt._get_nccf_denominator_val(audio_data, 0, 4, param, 4)
-        self.assertEqual(12.0, returned)
+    def test_denominator(self):
+        audio = [0, 1, 2, 3, 4, 5, 6, 7]
+        returned = pyrapt._get_nccf_denominator_val(audio, 0, 0, 5, 2)
+        self.assertEqual(10.0, returned)
+        returned = pyrapt._get_nccf_denominator_val(audio, 0, 1, 5, 2)
+        self.assertEqual(15.0, returned)
 
     # TODO: Improve get_peak_lag_val testing
 
