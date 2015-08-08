@@ -588,6 +588,8 @@ def _get_rms_ratio(frame_idx, params):
     audio_sample = params.original_audio[1]
     curr_frame_start = frame_idx * samples_per_frame
     prev_frame_start = (frame_idx - 1) * samples_per_frame
+    if prev_frame_start < 0:
+        prev_frame_start = 0
     # TODO: determine if this adjustment is appropriate:
     # because of the offset we might go beyond the array of samples, so set
     # limit here:
@@ -596,15 +598,18 @@ def _get_rms_ratio(frame_idx, params):
     if max_window_diff < 0:
         hanning_win_len += max_window_diff
 
-    # TODO: The RMS ratio calc is wrong. its the sqrt of entire thing!
     # use range(0,window_length) for sigma/summation (effectivey 0 to J-1)
     curr_sum = 0
     prev_sum = 0
+    curr_frame_index = curr_frame_start + rms_offset
+    prev_frame_index = prev_frame_start - rms_offset
+    if prev_frame_index < 0:
+        prev_frame_index = 0
+    audio_slice = audio_sample[curr_frame_index:]
+    prev_audio_slice = audio_sample[prev_frame_index:]
     for j in xrange(0, hanning_win_len):
-        curr_sum += (hanning_win_vals[j] *
-                     audio_sample[curr_frame_start + j + rms_offset])**2
-        prev_sum += (hanning_win_vals[j] *
-                     audio_sample[prev_frame_start + j - rms_offset])**2
+        curr_sum += (hanning_win_vals[j] * audio_slice[j])**2
+        prev_sum += (hanning_win_vals[j] * prev_audio_slice[j])**2
 
     rms_curr = math.sqrt(float(curr_sum) / float(hanning_win_len))
     rms_prev = math.sqrt(float(prev_sum) / float(hanning_win_len))
