@@ -597,7 +597,7 @@ def _get_rms_ratio(frame_idx, params):
         hanning_win_len += max_window_diff
 
     # TODO: The RMS ratio calc is wrong. its the sqrt of entire thing!
-    # .........
+    # use range(0,window_length) for sigma/summation (effectivey 0 to J-1)
     curr_sum = 0
     prev_sum = 0
     for j in xrange(0, hanning_win_len):
@@ -606,17 +606,6 @@ def _get_rms_ratio(frame_idx, params):
         prev_sum += (hanning_win_vals[j] *
                      audio_sample[prev_frame_start + j - rms_offset])**2
 
-    rms_curr = float(math.sqrt(curr_sum)) / float(hanning_win_len)
-    rms_prev = float(math.sqrt(prev_sum)) / float(hanning_win_len)
-    # use range(0,window_length) for sigma/summation (effectivey 0 to J-1)
-    # curr_sum = sum((hanning_win_vals[j] *
-    #               audio_sample[curr_frame_start + j +
-    #               rms_offset])**2
-    #               for j in xrange(0, hanning_win_len))
-    # rms_curr = math.sqrt(float(curr_sum) / float(hanning_win_len))
-    # prev_sum = sum((hanning_win_vals[j] *
-    #               audio_sample[prev_frame_start + j -
-    #               rms_offset])**2
-    #               for j in xrange(0, hanning_win_len))
-    # rms_prev = math.sqrt(float(prev_sum) / float(hanning_win_len))
+    rms_curr = math.sqrt(float(curr_sum) / float(hanning_win_len))
+    rms_prev = math.sqrt(float(prev_sum) / float(hanning_win_len))
     return (rms_curr / rms_prev)
