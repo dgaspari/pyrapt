@@ -1,0 +1,1 @@
+python -c "import cProfile; import re; import pstats; from pyrapt import pyrapt; cProfile.run('pyrapt.rapt(\"example.wav\")', 'example_run_profile_tmp0');p=pstats.Stats('example_run_profile_tmp0');p.sort_stats('time').print_stats();"
