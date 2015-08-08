@@ -605,11 +605,17 @@ def _get_rms_ratio(frame_idx, params):
     prev_frame_index = prev_frame_start - rms_offset
     if prev_frame_index < 0:
         prev_frame_index = 0
-    audio_slice = audio_sample[curr_frame_index:]
-    prev_audio_slice = audio_sample[prev_frame_index:]
-    for j in xrange(0, hanning_win_len):
-        curr_sum += (hanning_win_vals[j] * audio_slice[j])**2
-        prev_sum += (hanning_win_vals[j] * prev_audio_slice[j])**2
+    audio_slice = numpy.array(audio_sample[curr_frame_index:
+                                           curr_frame_index + hanning_win_len])
+    prev_audio_slice = numpy.array(audio_sample[prev_frame_index:
+                                                prev_frame_index +
+                                                hanning_win_len])
+    # since window len may be reduced (since we are end of sample), make sure
+    # the hanning window vals match up with our slice of the audio sample
+    hanning_win_val = numpy.array(hanning_win_vals[:hanning_win_len])
+
+    curr_sum = sum((audio_slice * hanning_win_val)**2)
+    prev_sum = sum((prev_audio_slice * hanning_win_val)**2)
 
     rms_curr = math.sqrt(float(curr_sum) / float(hanning_win_len))
     rms_prev = math.sqrt(float(prev_sum) / float(hanning_win_len))
