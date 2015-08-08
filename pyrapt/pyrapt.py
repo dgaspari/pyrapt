@@ -586,25 +586,30 @@ def _get_spec_stationarity():
 
 # RMS ratio, denoted as rr_i in the delta formulas:
 def _get_rms_ratio(frame_idx, params):
-    curr_frame_start = frame_idx * params.samples_per_frame
-    prev_frame_start = (frame_idx - 1) * params.samples_per_frame
+    samples_per_frame = params.samples_per_frame
+    rms_offset = params.rms_offset
+    hanning_win_len = params.hanning_window_length
+    hanning_win_vals = params.hanning_window_vals
+    audio_sample = params.original_audio[1]
+    curr_frame_start = frame_idx * samples_per_frame
+    prev_frame_start = (frame_idx - 1) * samples_per_frame
     # TODO: determine if this adjustment is appropriate:
     # because of the offset we might go beyond the array of samples, so set
     # limit here:
-    max_window_diff = (len(params.original_audio[1]) - (curr_frame_start +
-                       params.rms_offset + params.hanning_window_length))
+    max_window_diff = (len(audio_sample) - (curr_frame_start +
+                       rms_offset + hanning_win_len))
     if max_window_diff < 0:
-        params.hanning_window_length += max_window_diff
+        hanning_win_len += max_window_diff
 
     # use range(0,window_length) for sigma/summation (effectivey 0 to J-1)
-    curr_sum = sum((params.hanning_window_vals[j] *
-                   params.original_audio[1][curr_frame_start + j +
-                   params.rms_offset])**2
-                   for j in xrange(0, params.hanning_window_length))
-    rms_curr = math.sqrt(float(curr_sum) / float(params.hanning_window_length))
-    prev_sum = sum((params.hanning_window_vals[j] *
-                   params.original_audio[1][prev_frame_start + j -
-                   params.rms_offset])**2
-                   for j in xrange(0, params.hanning_window_length))
-    rms_prev = math.sqrt(float(prev_sum) / float(params.hanning_window_length))
+    curr_sum = sum((hanning_win_vals[j] *
+                   audio_sample[curr_frame_start + j +
+                   rms_offset])**2
+                   for j in xrange(0, hanning_win_len))
+    rms_curr = math.sqrt(float(curr_sum) / float(hanning_win_len))
+    prev_sum = sum((hanning_win_vals[j] *
+                   audio_sample[prev_frame_start + j -
+                   rms_offset])**2
+                   for j in xrange(0, hanning_win_len))
+    rms_prev = math.sqrt(float(prev_sum) / float(hanning_win_len))
     return (rms_curr / rms_prev)
