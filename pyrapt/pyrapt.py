@@ -334,13 +334,23 @@ def _get_correlation(audio, frame, lag, params, is_firstpass=True):
         samples_for_lag = audio_slice[j + lag] - mean_for_window
         samples += correlated_samples * samples_for_lag
 
-    denominator_base = _get_nccf_denominator_val(audio_slice, frame_start, 0,
-                                                 samples_correlated_per_lag,
-                                                 mean_for_window)
+    base_audio_slice = numpy.array(audio_sample[frame_start:
+                                                frame_start +
+                                                samples_correlated_per_lag])
+    lag_audio_slice = numpy.array(audio_sample[frame_start + lag: frame_start +
+                                               lag +
+                                               samples_correlated_per_lag])
 
-    denominator_lag = _get_nccf_denominator_val(audio_slice, frame_start, lag,
-                                                samples_correlated_per_lag,
-                                                mean_for_window)
+    denominator_base = sum((base_audio_slice - float(mean_for_window))**2)
+    denominator_lag = sum((lag_audio_slice - float(mean_for_window))**2)
+
+    # denominator_base = _get_nccf_denominator_val(audio_slice, frame_start, 0,
+    #                                             samples_correlated_per_lag,
+    #                                             mean_for_window)
+    #
+    # denominator_lag = _get_nccf_denominator_val(audio_slice, frame_start, lag,
+    #                                            samples_correlated_per_lag,
+    #                                            mean_for_window)
 
     if is_firstpass:
         denominator = math.sqrt(denominator_base * denominator_lag)
