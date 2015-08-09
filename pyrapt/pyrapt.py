@@ -26,8 +26,8 @@ def rapt(wavfile_path, **kwargs):
     downsampled_audio = _get_downsampled_audio(original_audio,
                                                raptparam.maximum_allowed_freq)
 
-    original_audio = (original_audio[0], original_audio[1].tolist())
-    downsampled_audio = (downsampled_audio[0], downsampled_audio[1].tolist())
+    # original_audio = (original_audio[0], original_audio[1].tolist())
+    # downsampled_audio = (downsampled_audio[0], downsampled_audio[1].tolist())
 
     # calculate parameters for RAPT with input audio
     _calculate_params(raptparam, original_audio, downsampled_audio)
@@ -320,29 +320,26 @@ def _get_correlation(audio, frame, lag, params, is_firstpass=True):
     # NOTE: summation is from m (frame start) to m+n-1 (m + samples handled
     # per lag). The -1 is implicit when summing the array between m and n
     frame_start = frame * params[1].samples_per_frame
+    # TODO: use this val everywhere in this method?
     final_correlated_sample = frame_start + samples_correlated_per_lag
-    frame_sum = sum(audio_sample[frame_start:final_correlated_sample])
+    frame_sum = numpy.sum(audio_sample[frame_start:final_correlated_sample])
     mean_for_window = ((1.0 / float(samples_correlated_per_lag)) * frame_sum)
 
     # take audio portion that starts at frame start
-    audio_slice = audio_sample[frame_start:]
+    audio_slice = audio_sample[frame_start:frame_start +
+                               samples_correlated_per_lag]
+    lag_audio_slice = audio_sample[frame_start + lag: frame_start + lag +
+                                   samples_correlated_per_lag]
+    samples = numpy.sum((audio_slice - mean_for_window) *
+                        (lag_audio_slice - mean_for_window))
 
-    # NOTE: NCCF formula has inclusive summation from 0 to n-1, but must add
-    # 1 to max value here due to standard behavior of range/xrange:
-    for j in xrange(0, samples_correlated_per_lag):
-        correlated_samples = audio_slice[j] - mean_for_window
-        samples_for_lag = audio_slice[j + lag] - mean_for_window
-        samples += correlated_samples * samples_for_lag
+    base_audio_slice = audio_sample[frame_start:frame_start +
+                                    samples_correlated_per_lag]
+    lag_audio_slice = audio_sample[frame_start + lag: frame_start + lag +
+                                   samples_correlated_per_lag]
 
-    base_audio_slice = numpy.array(audio_sample[frame_start:
-                                                frame_start +
-                                                samples_correlated_per_lag])
-    lag_audio_slice = numpy.array(audio_sample[frame_start + lag: frame_start +
-                                               lag +
-                                               samples_correlated_per_lag])
-
-    denominator_base = sum((base_audio_slice - float(mean_for_window))**2)
-    denominator_lag = sum((lag_audio_slice - float(mean_for_window))**2)
+    denominator_base = numpy.sum((base_audio_slice - float(mean_for_window))**2)
+    denominator_lag = numpy.sum((lag_audio_slice - float(mean_for_window))**2)
 
     if is_firstpass:
         denominator = math.sqrt(denominator_base * denominator_lag)
@@ -594,17 +591,16 @@ def _get_rms_ratio(frame_idx, params):
     prev_frame_index = prev_frame_start - rms_offset
     if prev_frame_index < 0:
         prev_frame_index = 0
-    audio_slice = numpy.array(audio_sample[curr_frame_index:
-                                           curr_frame_index + hanning_win_len])
-    prev_audio_slice = numpy.array(audio_sample[prev_frame_index:
-                                                prev_frame_index +
-                                                hanning_win_len])
+    audio_slice = audio_sample[curr_frame_index:curr_frame_index +
+                               hanning_win_len]
+    prev_audio_slice = audio_sample[prev_frame_index:prev_frame_index +
+                                    hanning_win_len]
     # since window len may be reduced (since we are end of sample), make sure
     # the hanning window vals match up with our slice of the audio sample
-    hanning_win_val = numpy.array(hanning_win_vals[:hanning_win_len])
+    hanning_win_val = hanning_win_vals[:hanning_win_len]
 
-    curr_sum = sum((audio_slice * hanning_win_val)**2)
-    prev_sum = sum((prev_audio_slice * hanning_win_val)**2)
+    curr_sum = numpy.sum((audio_slice * hanning_win_val)**2)
+    prev_sum = numpy.sum((prev_audio_slice * hanning_win_val)**2)
 
     rms_curr = math.sqrt(float(curr_sum) / float(hanning_win_len))
     rms_prev = math.sqrt(float(prev_sum) / float(hanning_win_len))
