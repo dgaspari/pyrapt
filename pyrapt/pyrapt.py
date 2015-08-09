@@ -311,35 +311,25 @@ def _get_marked_results(lag_results, params, is_firstpass=True):
 
 
 def _get_correlation(audio, frame, lag, params, is_firstpass=True):
+    numpysum = numpy.sum
     samples = 0
     audio_sample = audio[1]
     samples_correlated_per_lag = params[1].samples_correlated_per_lag
-    # mean_for_window is the mean signal for the current analysis window
-    # David Talkin suggests this in his RAPT paper as a variant to the original
-    # NCCF function. This mean only needs to be calculated once per frame.
-    # NOTE: summation is from m (frame start) to m+n-1 (m + samples handled
-    # per lag). The -1 is implicit when summing the array between m and n
     frame_start = frame * params[1].samples_per_frame
-    # TODO: use this val everywhere in this method?
     final_correlated_sample = frame_start + samples_correlated_per_lag
-    frame_sum = numpy.sum(audio_sample[frame_start:final_correlated_sample])
+
+    frame_sum = numpysum(audio_sample[frame_start:final_correlated_sample])
     mean_for_window = ((1.0 / float(samples_correlated_per_lag)) * frame_sum)
 
-    # take audio portion that starts at frame start
-    audio_slice = audio_sample[frame_start:frame_start +
-                               samples_correlated_per_lag]
-    lag_audio_slice = audio_sample[frame_start + lag: frame_start + lag +
-                                   samples_correlated_per_lag]
-    samples = numpy.sum((audio_slice - mean_for_window) *
-                        (lag_audio_slice - mean_for_window))
+    audio_slice = audio_sample[frame_start:final_correlated_sample]
+    lag_audio_slice = audio_sample[frame_start + lag:
+                                   final_correlated_sample + lag]
 
-    base_audio_slice = audio_sample[frame_start:frame_start +
-                                    samples_correlated_per_lag]
-    lag_audio_slice = audio_sample[frame_start + lag: frame_start + lag +
-                                   samples_correlated_per_lag]
+    samples = numpysum((audio_slice - mean_for_window) *
+                       (lag_audio_slice - mean_for_window))
 
-    denominator_base = numpy.sum((base_audio_slice - float(mean_for_window))**2)
-    denominator_lag = numpy.sum((lag_audio_slice - float(mean_for_window))**2)
+    denominator_base = numpysum((audio_slice - float(mean_for_window))**2)
+    denominator_lag = numpysum((lag_audio_slice - float(mean_for_window))**2)
 
     if is_firstpass:
         denominator = math.sqrt(denominator_base * denominator_lag)
@@ -516,12 +506,13 @@ def _is_unvoiced(candidate):
 
 # determines cost of voiced to voice delta w/ prev entry's global cost:
 def _get_voiced_to_voiced_cost(candidate, prev_entry, params):
+    numpylog = numpy.log
     prev_cost = prev_entry[0]
     prev_candidate = prev_entry[1]
     # value of epsilon in voiced-to-voiced delta formula:
-    freq_jump_cost = numpy.log(float(candidate[0]) / float(prev_candidate[0]))
+    freq_jump_cost = numpylog(float(candidate[0]) / float(prev_candidate[0]))
     transition_cost = (params.freq_weight * (params.doubling_cost +
-                       abs(freq_jump_cost - numpy.log(2.0))))
+                       abs(freq_jump_cost - numpylog(2.0))))
     final_cost = prev_cost + transition_cost
     return final_cost
 
