@@ -6,13 +6,15 @@ https://github.com/dgaspari/tonetrainer
 """
 
 import zerorpc
-# from pyrapt import pyrapt
+from pyrapt import pyrapt
 
 
 class Pyrapt_RPC(object):
-    def hello(self, name):
-        print('hello method invoked')
-        return "Hello, %s" % name
+    def raptforfile(self, filename):
+        print('running pyrapt.rapt...')
+        freq_map = pyrapt.rapt(filename)
+        print('finished running pyrapt.rapt...')
+        return freq_map
 
 
 server = zerorpc.Server(Pyrapt_RPC())
