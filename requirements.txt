@@ -4,6 +4,9 @@ mock==1.0.1
 numpy==1.9.2
 scipy=0.15.1
 
+#zerorpc:
+#zerorpc=???
+
 #TODO: determine if i need:
 #six
 #pytz
@@ -21,6 +24,9 @@ scipy=0.15.1
 # sudo apt-get install libamd2.2.0 libblas3gf libc6 libgcc1 libgfortran3 liblapack3gf libumfpack5.4.0 libstdc++6 build-essential gfortran libatlas-sse2-dev python-all-dev
 # sudo apt-get install libatlas-base-dev gfortran
 #
+
+# zerorpc pre-reqs:
+# you will need libevent and zeromq installed on your server to take advantage of the zeromq package
 
 #If you want matplotlib, then make sure to run:
 #apt-get build-dept matplotlib
