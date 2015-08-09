@@ -344,14 +344,6 @@ def _get_correlation(audio, frame, lag, params, is_firstpass=True):
     denominator_base = sum((base_audio_slice - float(mean_for_window))**2)
     denominator_lag = sum((lag_audio_slice - float(mean_for_window))**2)
 
-    # denominator_base = _get_nccf_denominator_val(audio_slice, frame_start, 0,
-    #                                             samples_correlated_per_lag,
-    #                                             mean_for_window)
-    #
-    # denominator_lag = _get_nccf_denominator_val(audio_slice, frame_start, lag,
-    #                                            samples_correlated_per_lag,
-    #                                            mean_for_window)
-
     if is_firstpass:
         denominator = math.sqrt(denominator_base * denominator_lag)
     else:
@@ -360,19 +352,6 @@ def _get_correlation(audio, frame, lag, params, is_firstpass=True):
         denominator = math.sqrt(denominator)
 
     return float(samples) / float(denominator)
-
-
-def _get_nccf_denominator_val(audio_slice, frame_start, starting_val,
-                              samples_correlated_per_lag, frame_sum):
-    # Calculates the denominator value of the NCCF equation
-    # (e_j in the formula)
-    total_sum = 0.0
-    # NOTE that I am adding 1 to the xrange to be inclusive:
-    for l in xrange(starting_val,
-                    starting_val + samples_correlated_per_lag):
-        sample = float(audio_slice[l] - frame_sum)
-        total_sum += (sample ** 2)
-    return total_sum
 
 
 # TODO: Try and get peaks instead of just taking the basic lag value, but
