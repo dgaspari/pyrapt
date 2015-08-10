@@ -16,6 +16,13 @@ class Pyrapt_RPC(object):
         print('finished running pyrapt.rapt...')
         return freq_map
 
+    def raptforblob(self, blobdata):
+        # this takes a blob from javascript (base 64 encoded?) - need
+        # to convert to a file object temporarily, read as wav, then
+        # return frequency data:
+        print('received request for blob data:')
+        print(blobdata)
+        return [1, 2, 3, 4, 5]
 
 server = zerorpc.Server(Pyrapt_RPC())
 # TODO: specify binding in config to control who talks to this server:
