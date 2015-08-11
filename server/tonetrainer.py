@@ -16,6 +16,8 @@ class Pyrapt_RPC(object):
         print('finished running pyrapt.rapt...')
         return freq_map
 
+    # TODO: consider passing stream rather than a file location, to allow
+    # for the python processing to occur on a separate server
     def raptforblob(self, blobdata):
         # this takes a blob from javascript (base 64 encoded?) - need
         # to convert to a file object temporarily, read as wav, then
