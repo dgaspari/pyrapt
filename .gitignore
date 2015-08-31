@@ -6,3 +6,4 @@ dist
 build
 .ropeproject
 scratch/*
+visualization/output/*

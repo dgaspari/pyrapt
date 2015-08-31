@@ -4,8 +4,9 @@ mock==1.0.1
 numpy==1.9.2
 scipy=0.15.1
 
+# for zerorpc listener used by tonetrainer server:
 #zerorpc:
-#zerorpc=???
+#pyzmq
 
 #TODO: determine if i need:
 #six
@@ -33,4 +34,7 @@ scipy=0.15.1
 #This installed a large # of undelrying packages to support the various
 #matplotlib backends (GTK, etc.).
 
-
+# more visualization:
+# bokeh
+# pyaudio (installed from file: https://people.csail.mit.edu/hubert/pyaudio/packages/pyaudio-0.2.8.tar.gz )
+(note: had to apt-get install dependency: sudo apt-get install portaudio19-dev)
