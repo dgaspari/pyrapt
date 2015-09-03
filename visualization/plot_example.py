@@ -1,6 +1,8 @@
 from pyrapt import pyrapt, raptparams
 from bokeh.plotting import figure, output_file, save
+from bokeh.models import ColumnDataSource
 import numpy
+from matplotlib import mlab
 params = raptparams.Raptparams()
 example_audio = pyrapt._get_audio_data('example.wav')
 samples_per_frame = int(example_audio[0] * params.frame_step_size)
@@ -9,6 +11,7 @@ x = range(0, len(y))
 y = numpy.array(y)
 x = numpy.array(x)
 x = x * samples_per_frame
+spec = mlab.specgram(example_audio[1])
 output_file('visualization/output/example_plot.html', title='example.wav f0')
 p = figure(title='freq of example.wav', x_axis_label='x',
            y_axis_label='y')
