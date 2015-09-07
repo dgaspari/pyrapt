@@ -42,6 +42,36 @@ def rapt(wavfile_path, **kwargs):
     return freq_estimate
 
 
+def rapt_with_nccf(wavfile_path, **kwargs):
+    """
+    F0 estimator inspired by RAPT algorithm to determine vocal
+    pitch of an audio sample.
+    """
+    # Process optional keyword args and build out rapt params
+    raptparam = _setup_rapt_params(kwargs)
+
+    # TODO: Flesh out docstring, describe args, expected vals in kwargs
+    original_audio = _get_audio_data(wavfile_path)
+
+    downsampled_audio = _get_downsampled_audio(original_audio,
+                                               raptparam.maximum_allowed_freq)
+
+    # original_audio = (original_audio[0], original_audio[1].tolist())
+    # downsampled_audio = (downsampled_audio[0], downsampled_audio[1].tolist())
+
+    # calculate parameters for RAPT with input audio
+    _calculate_params(raptparam, original_audio, downsampled_audio)
+
+    # get f0 candidates using nccf
+    nccf_results = _run_nccf(downsampled_audio, original_audio, raptparam)
+
+    # Dynamic programming - determine voicing state at each period candidate
+    freq_estimate = _get_freq_estimate(nccf_results, raptparam,
+                                       original_audio[0])
+    # return output of nccf for now
+    return (nccf_results, freq_estimate)
+
+
 def _setup_rapt_params(kwargs):
     # Use optional args for RAPT parameters otherwise use defaults
     params = raptparams.Raptparams()
