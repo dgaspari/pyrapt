@@ -65,7 +65,7 @@ class TestNccfMethods(TestCase):
     @patch('pyrapt.pyrapt._get_secondpass_frame_results')
     def test_nccf_secondpass(self, mock_frame_results):
         mock_frame_results.return_value = [(5, 0.6), (30, 0.7), (55, 0.9)]
-        first_pass = [(4, 0.6), (4, 0.6), (4, 0.6)] * 165
+        first_pass = [(4, 0.6)] * 165
         audio_data = (44100, numpy.full(73612, 6.8))
         raptparam = raptparams.Raptparams()
         raptparam.sample_rate_ratio = 20

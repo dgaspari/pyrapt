@@ -7,7 +7,7 @@ from matplotlib import mlab
 show_freq = True
 show_nccf = True
 show_amp = True
-audio_file = 'newsamples/example1.wav'
+audio_file = 'newsamples/example3.wav'
 
 
 params = raptparams.Raptparams()

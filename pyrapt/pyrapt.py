@@ -196,7 +196,6 @@ def _first_pass_nccf(audio, raptparam):
 def _second_pass_nccf(original_audio, first_pass, raptparam):
     # Runs NCCF on original audio, but only for lags highlighted from first
     # pass results. Will output the finalized F0 candidates for each frame
-
     nccfparam = _get_nccf_params(original_audio, raptparam, False)
     params = (raptparam, nccfparam)
 
@@ -207,11 +206,11 @@ def _second_pass_nccf(original_audio, first_pass, raptparam):
     # TODO: this guarantees matching up of first pass frames w second pass, but
     # the nccf param max_frame_count is used in a few places and it may be
     # off by one - so we need to reconcile with this problem
-    max_frames = len(first_pass)
+    nccfparam.max_frame_count = len(first_pass)
 
-    candidates = [None] * max_frames
+    candidates = [None] * nccfparam.max_frame_count
 
-    for i in xrange(0, max_frames):
+    for i in xrange(0, nccfparam.max_frame_count):
         candidates[i] = _get_secondpass_frame_results(
             original_audio, i, lag_range, params, first_pass)
 
