@@ -233,8 +233,8 @@ def _get_nccf_params(audio_input, raptparams, is_firstpass):
     nccfparam.samples_per_frame = int(raptparams.frame_step_size *
                                       audio_input[0])
     # Value of "M-1" in NCCF equation:
-    nccfparam.max_frame_count = (int(float(len(audio_input[1])) /
-                                 float(nccfparam.samples_per_frame)) - 1)
+    nccfparam.max_frame_count = int(round(float(len(audio_input[1])) /
+                                    float(nccfparam.samples_per_frame)) - 1)
     return nccfparam
 
 
@@ -571,6 +571,12 @@ def _get_unvoiced_to_voiced_cost(candidate, prev_entry, frame_idx, params):
     # delta = (params.transition_cost + (params.spec_mod_transition_cost *
     #         _get_spec_stationarity()) + (params.amp_mod_transition_cost /
     #         _get_rms_ratio(sample_rate)))
+    current_rms_ratio = _get_rms_ratio(frame_idx, params)
+
+    # TODO: figure out how to better handle rms ratio on final frame
+    if current_rms_ratio <= 0:
+        return prev_cost + params.transition_cost
+
     delta = (params.transition_cost + (params.amp_mod_transition_cost /
              _get_rms_ratio(frame_idx, params)))
     return prev_cost + delta
@@ -594,6 +600,7 @@ def _get_rms_ratio(frame_idx, params):
     audio_sample = params.original_audio[1]
     curr_frame_start = frame_idx * samples_per_frame
     prev_frame_start = (frame_idx - 1) * samples_per_frame
+
     if prev_frame_start < 0:
         prev_frame_start = 0
     # TODO: determine if this adjustment is appropriate:
@@ -603,6 +610,9 @@ def _get_rms_ratio(frame_idx, params):
                        rms_offset + hanning_win_len))
     if max_window_diff < 0:
         hanning_win_len += max_window_diff
+
+    if hanning_win_len < 0:
+        hanning_win_len = 0
 
     # use range(0,window_length) for sigma/summation (effectivey 0 to J-1)
     curr_sum = 0
@@ -621,6 +631,11 @@ def _get_rms_ratio(frame_idx, params):
 
     curr_sum = numpy.sum((audio_slice * hanning_win_val)**2)
     prev_sum = numpy.sum((prev_audio_slice * hanning_win_val)**2)
+
+    # TODO: Do a better job of handling the case where we are at the end
+    # of the audio sample and the last frame has no samples to analyze for ratio
+    if curr_sum == 0.0 and prev_sum == 0.0 and hanning_win_len == 0:
+        return 0.0
 
     rms_curr = math.sqrt(float(curr_sum) / float(hanning_win_len))
     rms_prev = math.sqrt(float(prev_sum) / float(hanning_win_len))
