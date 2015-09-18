@@ -2,6 +2,7 @@
 *.py.swp
 #Packaging
 *.egg-info
+*.html~
 dist
 build
 .ropeproject
