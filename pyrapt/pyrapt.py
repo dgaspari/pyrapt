@@ -578,7 +578,7 @@ def _get_unvoiced_to_voiced_cost(candidate, prev_entry, frame_idx, params):
         return prev_cost + params.transition_cost
 
     delta = (params.transition_cost + (params.amp_mod_transition_cost /
-             _get_rms_ratio(frame_idx, params)))
+             current_rms_ratio))
     return prev_cost + delta
 
 
