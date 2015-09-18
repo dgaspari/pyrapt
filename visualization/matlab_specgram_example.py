@@ -2,11 +2,12 @@ from pyrapt import pyrapt
 # import numpy as np
 from matplotlib import pyplot as plt
 
-original_audio = pyrapt._get_audio_data('example.wav')
+original_audio = pyrapt._get_audio_data('newsamples/example0.wav')
 fig, ax1 = plt.subplots(nrows=1)
 data, freqs, bins, im = ax1.specgram(original_audio[1])
 ax1.axis('tight')
-plt.show()
+# plt.show()
+plt.savefig('example0_specgram.png')
 # fig, (ax1, ax2) = plt.subplots(nrows=2)
 # data, freqs, bins, im = ax1.specgram(original_audio[1])
 # ax1.axis('tight')
