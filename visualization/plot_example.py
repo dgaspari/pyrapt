@@ -5,8 +5,8 @@ import numpy
 # from matplotlib import mlab
 
 show_freq = True
-show_nccf = True
-show_amp = True
+show_nccf = False
+show_amp = False
 # audio_file = 'newsamples/example4.wav'
 # output_filename = 'visualization/output/example_plot.html'
 
@@ -15,7 +15,8 @@ def plot_example(audio_file, output_filename):
     params = raptparams.Raptparams()
     example_audio = pyrapt._get_audio_data(audio_file)
     samples_per_frame = int(example_audio[0] * params.frame_step_size)
-    results = pyrapt.rapt_with_nccf(audio_file)
+    results = pyrapt.rapt_with_nccf(audio_file, transition_cost=0.5,
+                                    doubling_cost=30.0)
     nccf_results = results[0]
     nccf_cands = []
     z = []
@@ -33,7 +34,8 @@ def plot_example(audio_file, output_filename):
     x = x * samples_per_frame
     # spec = mlab.specgram(example_audio[1])
     output_file(output_filename, title=audio_file)
-    p = figure(title='freq of ' + audio_file, x_axis_label='x',
+    p = figure(title='example 0 w trans cost of 0.5 and doubling cost '
+               + 'of 30.0', x_axis_label='x',
                y_axis_label='y')
     if show_amp:
         p.line(range(0, len(example_audio[1])), example_audio[1],
@@ -46,7 +48,7 @@ def plot_example(audio_file, output_filename):
 
 
 plot_example('newsamples/example0.wav',
-             'visualization/output/example0_plot.html')
+             'visualization/output/example0_adjusted.html')
 # plot_example('newsamples/example1.wav',
 #             'visualization/output/mainexamples/example1_plot.html')
 # plot_example('newsamples/example2.wav',
