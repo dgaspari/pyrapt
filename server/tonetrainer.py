@@ -12,7 +12,9 @@ from pyrapt import pyrapt
 class Pyrapt_RPC(object):
     def raptforfile(self, filename):
         print('running pyrapt.rapt...')
-        freq_map = pyrapt.rapt(filename)
+        # freq_map = pyrapt.rapt(filename)
+        freq_map = pyrapt.rapt(filename, transition_cost=0.5,
+                               doubling_cost=30.0)
         print('finished running pyrapt.rapt...')
         return freq_map
 
