@@ -3,6 +3,7 @@ from bokeh.plotting import figure, output_file, save
 # from bokeh.models import ColumnDataSource
 import numpy
 # from matplotlib import mlab
+import os
 
 show_freq = True
 show_nccf = False
@@ -47,8 +48,14 @@ def plot_example(audio_file, output_filename):
     save(p)
 
 
-plot_example('newsamples/jonathan01/reqing01_2015-11-7_13:28:36.wav',
-             'visualization/output/jonathan_reqing01_example.html')
+input_dir = '/home/dgaspari/dev/thesis/rapt/git/pyrapt/newsamples/jonathan01'
+for i in os.listdir(input_dir):
+    if i.endswith('.wav'):
+        filename = input_dir + '/' + i
+        output_name = 'visualization/output/jonathan_' + i[:-4] + '.html'
+        plot_example(filename, output_name)
+# plot_example('newsamples/jonathan01/reqing01_2015-11-7_13:28:36.wav',
+#             'visualization/output/jonathan_reqing01_example.html')
 # plot_example('newsamples/example1.wav',
 #             'visualization/output/mainexamples/example1_plot.html')
 # plot_example('newsamples/example2.wav',
