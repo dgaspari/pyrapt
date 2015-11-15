@@ -11,9 +11,9 @@ sys.setdefaultencoding('utf-8')
 
 
 def get_file(name):
-    file_location = 'scratch/jonathan01_samples/'
+    file_location = 'scratch/jonathan01_2sec_samples/'
     for a_file in os.listdir(file_location):
-        if a_file.startswith(name) and a_file.endswith('.wav'):
+        if a_file.startswith(name + '0') and a_file.endswith('.wav'):
             return file_location + a_file
 
 
@@ -26,7 +26,7 @@ def get_plot(filename):
 def insert_to_db(filename, plot, mandarin, pinyin):
     print('inserting into DB')
     dbpath = '../../../web/tonetrainer/database/tonetrainer.db'
-    speaker_id = 1
+    speaker_id = 2
     # get binary foramtted blob to insert into DB:
     with open(filename, 'rb') as wavfile:
         a_blob = wavfile.read()
