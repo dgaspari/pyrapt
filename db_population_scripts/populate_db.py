@@ -11,7 +11,7 @@ sys.setdefaultencoding('utf-8')
 
 
 def get_file(name):
-    file_location = 'scratch/jonathan01_2sec_samples/'
+    file_location = 'scratch/marilyn01/'
     for a_file in os.listdir(file_location):
         if a_file.startswith(name + '0') and a_file.endswith('.wav'):
             return file_location + a_file
