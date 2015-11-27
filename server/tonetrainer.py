@@ -28,6 +28,7 @@ class Pyrapt_RPC(object):
         print(blobdata)
         return [1, 2, 3, 4, 5]
 
+print('Using ZeroRPC to listen on port 4242 for pitch tracker requests...')
 server = zerorpc.Server(Pyrapt_RPC())
 # TODO: specify binding in config to control who talks to this server:
 server.bind("tcp://0.0.0.0:4242")
