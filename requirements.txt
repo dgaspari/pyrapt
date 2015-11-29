@@ -2,11 +2,12 @@ pytest==2.6.4
 pytest-cov==1.8.1
 mock==1.0.1
 numpy==1.9.2
-scipy=0.15.1
+scipy==0.13.3
 
 # for zerorpc listener used by tonetrainer server:
-#zerorpc:
-#pyzmq
+gevent==1.0.2
+pyzmq==14.7.0
+zerorpc==0.5.1
 
 #TODO: determine if i need:
 #six
@@ -24,6 +25,10 @@ scipy=0.15.1
 # sudo apt-get install python-pip python-dev build-essential
 # sudo apt-get install libamd2.2.0 libblas3gf libc6 libgcc1 libgfortran3 liblapack3gf libumfpack5.4.0 libstdc++6 build-essential gfortran libatlas-sse2-dev python-all-dev
 # sudo apt-get install libatlas-base-dev gfortran
+
+# alt version:
+# sudo apt-get install libblas3gf libc6 libgcc1 libgfortran3 liblapack3gf libstdc++6 build-essential gfortran python-all-dev
+# sudo apt-get install libblas-dev liblapack-dev libatlas-base-dev gfortran
 #
 
 # zerorpc pre-reqs:
@@ -37,4 +42,4 @@ scipy=0.15.1
 # more visualization:
 # bokeh
 # pyaudio (installed from file: https://people.csail.mit.edu/hubert/pyaudio/packages/pyaudio-0.2.8.tar.gz )
-(note: had to apt-get install dependency: sudo apt-get install portaudio19-dev)
+# (note: had to apt-get install dependency: sudo apt-get install portaudio19-dev)
