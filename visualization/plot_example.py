@@ -47,8 +47,8 @@ def plot_example(audio_file, output_filename):
     save(p)
 
 
-plot_example('newsamples/jonathan01/reqing01_2015-11-7_13:28:36.wav',
-             'visualization/output/jonathan_reqing01_example.html')
+plot_example('selectedexamples/marilyn02/baoshou01_2015-11-17_1-9-21.wav',
+             'visualization/output/marilyn02_baoshou01_example.html')
 # plot_example('newsamples/example1.wav',
 #             'visualization/output/mainexamples/example1_plot.html')
 # plot_example('newsamples/example2.wav',
