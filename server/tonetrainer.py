@@ -17,10 +17,13 @@ class Pyrapt_RPC(object):
         print('finished running pyrapt.rapt...')
         return freq_map
 
-    def testraptforfile(self, filename, tcost, dcost):
+    def testraptforfile(self, filename, tcost, dcost, addconst, vobias, lagwt,
+                        freqwt):
         print('running TEST pyrapt.rapt...')
         freq_map = pyrapt.rapt(filename, transition_cost=tcost,
-                               doubling_cost=dcost)
+                               doubling_cost=dcost, additive_constant=addconst,
+                               voicing_bias=vobias, lag_weight=lagwt,
+                               freq_weight=freqwt)
         print('finished running pyrapt.rapt...')
         return freq_map
 
