@@ -74,7 +74,7 @@ class TestUtilityMethods(TestCase):
         self.assertEqual(441, params.samples_per_frame)
         self.assertEqual(1323, params.hanning_window_length)
         self.assertEqual([1, 2, 3, 4, 5], params.hanning_window_vals)
-        self.assertEqual(882, params.rms_offset)
+        self.assertEqual(441, params.rms_offset)
 
     def test_non_dict_input_kwrags(self):
         not_a_dict = 'foo'

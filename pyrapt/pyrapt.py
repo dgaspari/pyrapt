@@ -88,7 +88,10 @@ def _calculate_params(param, original_audio, downsampled_audio):
     param.samples_per_frame = int(param.frame_step_size * original_audio[0])
     param.hanning_window_length = int(0.03 * original_audio[0])
     param.hanning_window_vals = numpy.hanning(param.hanning_window_length)
-    param.rms_offset = int((float(original_audio[0]) / 1000.0) * 20.0)
+    # offset adjusts window centers to be 20ms apart regardless of frame
+    # step size - so the goal here is to find diff btwn frame size & 20ms apart
+    param.rms_offset = (((float(original_audio[0]) / 1000.0) * 20.0) -
+                        param.samples_per_frame)
 
 
 def _get_audio_data(wavfile_path):
