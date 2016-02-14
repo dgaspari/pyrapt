@@ -85,8 +85,9 @@ def _calculate_params(param, original_audio, downsampled_audio):
     param.sample_rate_ratio = (float(original_audio[0]) /
                                float(downsampled_audio[0]))
     param.original_audio = original_audio
-    param.samples_per_frame = int(param.frame_step_size * original_audio[0])
-    param.hanning_window_length = int(0.03 * original_audio[0])
+    param.samples_per_frame = int(round(param.frame_step_size *
+                                        original_audio[0]))
+    param.hanning_window_length = int(round(0.03 * original_audio[0]))
     param.hanning_window_vals = numpy.hanning(param.hanning_window_length)
     # offset adjusts window centers to be 20ms apart regardless of frame
     # step size - so the goal here is to find diff btwn frame size & 20ms apart
@@ -221,20 +222,20 @@ def _get_nccf_params(audio_input, raptparams, is_firstpass):
     """
     nccfparam = nccfparams.Nccfparams()
     # Value of "n" in NCCF equation:
-    nccfparam.samples_correlated_per_lag = int(
-        raptparams.correlation_window_size * audio_input[0])
+    nccfparam.samples_correlated_per_lag = int(round(
+        raptparams.correlation_window_size * audio_input[0]))
     # Starting value of "k" in NCCF equation:
     if(is_firstpass):
-        nccfparam.shortest_lag_per_frame = int(audio_input[0] /
-                                               raptparams.maximum_allowed_freq)
+        nccfparam.shortest_lag_per_frame = int(round(audio_input[0] /
+                                               raptparams.maximum_allowed_freq))
     else:
         nccfparam.shortest_lag_per_frame = 0
     # Value of "K" in NCCF equation
-    nccfparam.longest_lag_per_frame = int(audio_input[0] /
-                                          raptparams.minimum_allowed_freq)
+    nccfparam.longest_lag_per_frame = int(round(audio_input[0] /
+                                          raptparams.minimum_allowed_freq))
     # Value of "z" in NCCF equation
-    nccfparam.samples_per_frame = int(raptparams.frame_step_size *
-                                      audio_input[0])
+    nccfparam.samples_per_frame = int(round(raptparams.frame_step_size *
+                                      audio_input[0]))
     # Value of "M-1" in NCCF equation:
     nccfparam.max_frame_count = int(round(float(len(audio_input[1])) /
                                     float(nccfparam.samples_per_frame)) - 1)
@@ -377,7 +378,7 @@ def _get_correlation(audio, frame, lag, params, is_firstpass=True):
 # don't introduce wildly different lag values.
 def _get_peak_lag_val(lag_results, lag_index, params):
     current_lag = lag_index + params[1].shortest_lag_per_frame
-    extrapolated_lag = int(current_lag * params[0].sample_rate_ratio)
+    extrapolated_lag = int(round(current_lag * params[0].sample_rate_ratio))
     return (extrapolated_lag, lag_results[lag_index])
 
     # lag peak is the maxima of a given peak obtained by results
