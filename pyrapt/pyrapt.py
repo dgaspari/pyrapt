@@ -18,26 +18,30 @@ def rapt(wavfile_path, **kwargs):
     pitch of an audio sample.
     """
     # Process optional keyword args and build out rapt params
-    raptparam = _setup_rapt_params(kwargs)
+    param = _setup_rapt_params(kwargs)
 
     # TODO: Flesh out docstring, describe args, expected vals in kwargs
     original_audio = _get_audio_data(wavfile_path)
 
-    downsampled_audio = _get_downsampled_audio(original_audio,
-                                               raptparam.maximum_allowed_freq)
+    if param.is_two_pass_nccf:
+        downsampled_audio = _get_downsampled_audio(original_audio,
+                                                   param.maximum_allowed_freq)
 
     # original_audio = (original_audio[0], original_audio[1].tolist())
     # downsampled_audio = (downsampled_audio[0], downsampled_audio[1].tolist())
 
     # calculate parameters for RAPT with input audio
-    _calculate_params(raptparam, original_audio, downsampled_audio)
+    if param.is_two_pass_nccf:
+        _calculate_params(param, original_audio, downsampled_audio)
+    else:
+        _calculate_params(param, original_audio)
 
     # get f0 candidates using nccf
-    nccf_results = _run_nccf(downsampled_audio, original_audio, raptparam)
+    nccf_results = _run_nccf(downsampled_audio, original_audio, param)
 
     # Dynamic programming - determine voicing state at each period candidate
-    freq_estimate = _get_freq_estimate(nccf_results, raptparam,
-                                       original_audio[0])
+    freq_estimate = _get_freq_estimate(nccf_results, param, original_audio[0])
+
     # return output of nccf for now
     return freq_estimate
 
@@ -48,26 +52,29 @@ def rapt_with_nccf(wavfile_path, **kwargs):
     pitch of an audio sample.
     """
     # Process optional keyword args and build out rapt params
-    raptparam = _setup_rapt_params(kwargs)
+    param = _setup_rapt_params(kwargs)
 
     # TODO: Flesh out docstring, describe args, expected vals in kwargs
     original_audio = _get_audio_data(wavfile_path)
 
-    downsampled_audio = _get_downsampled_audio(original_audio,
-                                               raptparam.maximum_allowed_freq)
+    if param.is_two_pass_nccf:
+        downsampled_audio = _get_downsampled_audio(original_audio,
+                                                   param.maximum_allowed_freq)
 
     # original_audio = (original_audio[0], original_audio[1].tolist())
     # downsampled_audio = (downsampled_audio[0], downsampled_audio[1].tolist())
 
     # calculate parameters for RAPT with input audio
-    _calculate_params(raptparam, original_audio, downsampled_audio)
+    if param.is_two_pass_nccf:
+        _calculate_params(param, original_audio, downsampled_audio)
+    else:
+        _calculate_params(param, original_audio)
 
     # get f0 candidates using nccf
-    nccf_results = _run_nccf(downsampled_audio, original_audio, raptparam)
+    nccf_results = _run_nccf(downsampled_audio, original_audio, param)
 
     # Dynamic programming - determine voicing state at each period candidate
-    freq_estimate = _get_freq_estimate(nccf_results, raptparam,
-                                       original_audio[0])
+    freq_estimate = _get_freq_estimate(nccf_results, param, original_audio[0])
     # return output of nccf for now
     return (nccf_results, freq_estimate)
 
@@ -81,18 +88,19 @@ def _setup_rapt_params(kwargs):
     return params
 
 
-def _calculate_params(param, original_audio, downsampled_audio):
-    param.sample_rate_ratio = (float(original_audio[0]) /
-                               float(downsampled_audio[0]))
+def _calculate_params(param, original_audio, downsampled_audio=None):
     param.original_audio = original_audio
+    if downsampled_audio:
+        param.sample_rate_ratio = (float(original_audio[0]) /
+                                   float(downsampled_audio[0]))
     param.samples_per_frame = int(round(param.frame_step_size *
                                         original_audio[0]))
     param.hanning_window_length = int(round(0.03 * original_audio[0]))
     param.hanning_window_vals = numpy.hanning(param.hanning_window_length)
     # offset adjusts window centers to be 20ms apart regardless of frame
     # step size - so the goal here is to find diff btwn frame size & 20ms apart
-    param.rms_offset = (((float(original_audio[0]) / 1000.0) * 20.0) -
-                        param.samples_per_frame)
+    param.rms_offset = int(round((((float(original_audio[0]) / 1000.0) * 20.0) -
+                           param.samples_per_frame)))
 
 
 def _get_audio_data(wavfile_path):

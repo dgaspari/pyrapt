@@ -14,6 +14,7 @@ class TestUtilityMethods(TestCase):
 
     def test_empty_kwargs(self):
         params = pyrapt._setup_rapt_params(None)
+        self.assertEqual(True, params.is_two_pass_nccf)
         self.assertEqual(500, params.maximum_allowed_freq)
         self.assertEqual(50, params.minimum_allowed_freq)
         self.assertEqual(0.01, params.frame_step_size)
@@ -30,7 +31,8 @@ class TestUtilityMethods(TestCase):
         self.assertEqual(None, params.samples_per_frame)
 
     def test_custom_kwargs(self):
-        params = pyrapt._setup_rapt_params({'maximum_allowed_freq': 250,
+        params = pyrapt._setup_rapt_params({'is_two_pass_nccf': False,
+                                            'maximum_allowed_freq': 250,
                                             'minimum_allowed_freq': 100,
                                             'frame_step_size': 0.5,
                                             'correlation_window_size': 75,
@@ -38,6 +40,7 @@ class TestUtilityMethods(TestCase):
                                             'min_acceptable_peak_val': 1.5,
                                             'additive_constant': 100,
                                             'doubling_cost': 0.4})
+        self.assertEqual(False, params.is_two_pass_nccf)
         self.assertEqual(250, params.maximum_allowed_freq)
         self.assertEqual(100, params.minimum_allowed_freq)
         self.assertEqual(0.5, params.frame_step_size)
@@ -60,7 +63,7 @@ class TestUtilityMethods(TestCase):
         self.assertEqual(None, params.original_audio)
 
     @patch('numpy.hanning')
-    def test_calculate_params(self, mock_hanning):
+    def test_calculate_params_all_params(self, mock_hanning):
         params = raptparams.Raptparams()
         self.assertEqual(None, params.original_audio)
         self.assertEqual(None, params.samples_per_frame)
@@ -75,6 +78,24 @@ class TestUtilityMethods(TestCase):
         self.assertEqual(1323, params.hanning_window_length)
         self.assertEqual([1, 2, 3, 4, 5], params.hanning_window_vals)
         self.assertEqual(441, params.rms_offset)
+
+    @patch('numpy.hanning')
+    def test_calculate_params_firstpass_only(self, mock_hanning):
+        params = raptparams.Raptparams()
+        params.is_two_pass_nccf = False
+        params.frame_step_size = .008
+        self.assertEqual(None, params.original_audio)
+        self.assertEqual(None, params.samples_per_frame)
+        mock_hanning.return_value = [1, 2, 3, 4, 5]
+        audio = (44199, [5.0] * 7000)
+        pyrapt._calculate_params(params, audio)
+        mock_hanning.assert_called_once_with(1326)
+        self.assertEqual(None, params.sample_rate_ratio)
+        self.assertEqual(audio, params.original_audio)
+        self.assertEqual(354, params.samples_per_frame)
+        self.assertEqual(1326, params.hanning_window_length)
+        self.assertEqual([1, 2, 3, 4, 5], params.hanning_window_vals)
+        self.assertEqual(530, params.rms_offset)
 
     def test_non_dict_input_kwrags(self):
         not_a_dict = 'foo'

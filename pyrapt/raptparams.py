@@ -9,6 +9,9 @@ class Raptparams:
     """
 
     def __init__(self):
+        # Boolean flag to determine if we should do 2-pass NCCF:
+        self.is_two_pass_nccf = True
+
         # Value of "F0_max" in NCCF equation:
         self.maximum_allowed_freq = 500
 
