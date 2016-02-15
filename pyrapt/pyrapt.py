@@ -314,13 +314,15 @@ def _get_correlations_for_input_lags(audio, current_frame, first_pass,
                                      lag_range, params):
     candidates = [0.0] * lag_range
     max_correlation_val = 0.0
-    for lag_val in first_pass[current_frame]:
+    sorted_firstpass_results = first_pass[current_frame]
+    sorted_firstpass_results.sort(key=lambda tup: tup[0])
+    for lag_val in sorted_firstpass_results:
         # 1st pass lag value has been interpolated for original audio sample:
         lag_peak = lag_val[0]
 
         # for each peak check the closest 7 lags (if proposed peak is ok):
-        if lag_peak > 3 and lag_peak < lag_range - 3:
-            for k in xrange(lag_peak - 3, lag_peak + 4):
+        if lag_peak > 10 and lag_peak < lag_range - 11:
+            for k in xrange(lag_peak - 10, lag_peak + 11):
                 # determine if the current lag value causes us to go past the
                 # end of the audio sample - if so - skip and set val to 0
                 sample_range = (k + (params[1].samples_correlated_per_lag - 1) +
