@@ -346,7 +346,7 @@ def _get_marked_results(lag_results, params, is_firstpass=True):
 
     candidates = []
     for k, k_val in enumerate(lag_results[0]):
-        if k_val >= min_valid_correlation:
+        if k_val > min_valid_correlation:
             if is_firstpass:
                 candidates.append(_get_peak_lag_val(lag_results[0], k, params))
             else:
