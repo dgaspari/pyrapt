@@ -345,11 +345,13 @@ def _get_marked_results(lag_results, params, is_firstpass=True):
     max_allowed_candidates = params[0].max_hypotheses_per_frame - 1
 
     candidates = []
-    for k, k_val in enumerate(lag_results[0]):
-        if k_val > min_valid_correlation:
-            if is_firstpass:
-                candidates.append(_get_peak_lag_val(lag_results[0], k, params))
-            else:
+
+    if is_firstpass:
+        candidates = _extrapolate_lag_val(lag_results, min_valid_correlation,
+                                          max_allowed_candidates, params)
+    else:
+        for k, k_val in enumerate(lag_results[0]):
+            if k_val > min_valid_correlation:
                 current_lag = k + params[1].shortest_lag_per_frame
                 candidates.append((current_lag, k_val))
 
@@ -394,6 +396,89 @@ def _get_correlation(audio, frame, lag, params, is_firstpass=True):
         denominator = math.sqrt(denominator)
 
     return float(samples) / float(denominator)
+
+
+def _extrapolate_lag_val(lag_results, min_valid_correlation,
+                         max_allowed_candidates, params):
+    extrapolated_cands = []
+
+    if len(lag_results[0]) == 0:
+        return extrapolated_cands
+    elif len(lag_results[0]) == 1:
+        current_lag = 0 + params[1].shortest_lag_per_frame
+        new_lag = int(round(current_lag * params[0].sample_rate_ratio))
+        extrapolated_cands.append((new_lag, lag_results[0][0]))
+        return extrapolated_cands
+
+    least_lag = params[0].sample_rate_ratio * params[1].shortest_lag_per_frame
+    most_lag = params[0].sample_rate_ratio * params[1].longest_lag_per_frame
+    for k, k_val in enumerate(lag_results[0]):
+        if k_val > min_valid_correlation:
+            current_lag = k + params[1].shortest_lag_per_frame
+            new_lag = int(round(current_lag * params[0].sample_rate_ratio))
+            if k == 0:
+                # if at 1st lag value, interpolate using 0,0 input on left
+                prev_lag = k - 1 + params[1].shortest_lag_per_frame
+                new_prev = int(round(prev_lag * params[0].sample_rate_ratio))
+                next_lag = (k + 1 + params[1].shortest_lag_per_frame)
+                new_next = int(round(next_lag * params[0].sample_rate_ratio))
+                lags = numpy.array([new_prev, new_lag, new_next])
+                vals = numpy.array([0.0, k_val, lag_results[0][k+1]])
+                para = numpy.polyfit(lags, vals, 2)
+                final_lag = int(round(-para[1] / (2 * para[0])))
+                final_corr = float(para[0] * final_lag**2 + para[1] *
+                                   final_lag + para[2])
+                if (final_lag < least_lag or final_lag > most_lag or
+                        final_corr < -1.0 or final_corr > 1.0):
+                    current_lag = k + params[1].shortest_lag_per_frame
+                    new_lag = int(round(current_lag *
+                                        params[0].sample_rate_ratio))
+                    extrapolated_cands.append((new_lag, k_val))
+                else:
+                    extrapolated_cands.append((final_lag, final_corr))
+            elif k == len(lag_results[0]) - 1:
+                # if at last lag value, interpolate using 0,0 input on right
+                next_lag = k + 1 + params[1].shortest_lag_per_frame
+                new_next = int(round(next_lag * params[0].sample_rate_ratio))
+                prev_lag = (k - 1 + params[1].shortest_lag_per_frame)
+                new_prev = int(round(prev_lag * params[0].sample_rate_ratio))
+                lags = numpy.array([new_prev, new_lag, new_next])
+                vals = numpy.array([lag_results[0][k-1], k_val, 0.0])
+                para = numpy.polyfit(lags, vals, 2)
+                final_lag = int(round(-para[1] / (2 * para[0])))
+                final_corr = float(para[0] * final_lag**2 + para[1] *
+                                   final_lag + para[2])
+                if (final_lag < least_lag or final_lag > most_lag or
+                        final_corr < -1.0 or final_corr > 1.0):
+                    current_lag = k + params[1].shortest_lag_per_frame
+                    new_lag = int(round(current_lag *
+                                        params[0].sample_rate_ratio))
+                    extrapolated_cands.append((new_lag, k_val))
+                else:
+                    extrapolated_cands.append((final_lag, final_corr))
+            else:
+                # we are in middle of lag results - use left and right
+                next_lag = (k + 1 + params[1].shortest_lag_per_frame)
+                new_next = int(round(next_lag * params[0].sample_rate_ratio))
+                prev_lag = (k - 1 + params[1].shortest_lag_per_frame)
+                new_prev = int(round(prev_lag * params[0].sample_rate_ratio))
+                lags = numpy.array([new_prev, new_lag, new_next])
+                vals = numpy.array([lag_results[0][k-1], k_val,
+                                   lag_results[0][k+1]])
+                para = numpy.polyfit(lags, vals, 2)
+                final_lag = int(round(-para[1] / (2 * para[0])))
+                final_corr = float(para[0] * final_lag**2 + para[1] *
+                                   final_lag + para[2])
+                if (final_lag < least_lag or final_lag > most_lag or
+                        final_corr < -1.0 or final_corr > 1.0):
+                    current_lag = k + params[1].shortest_lag_per_frame
+                    new_lag = int(round(current_lag *
+                                        params[0].sample_rate_ratio))
+                    extrapolated_cands.append((new_lag, k_val))
+                else:
+                    extrapolated_cands.append((final_lag, final_corr))
+
+    return extrapolated_cands
 
 
 # TODO: Try and get peaks instead of just taking the basic lag value, but
