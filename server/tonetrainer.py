@@ -23,7 +23,7 @@ class Pyrapt_RPC(object):
         freq_map = pyrapt.rapt(filename, transition_cost=tcost,
                                doubling_cost=dcost, additive_constant=addconst,
                                voicing_bias=vobias, lag_weight=lagwt,
-                               freq_weight=freqwt)
+                               freq_weight=freqwt, is_two_pass_nccf=False)
         print('finished running pyrapt.rapt...')
         return freq_map
 

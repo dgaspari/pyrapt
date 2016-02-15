@@ -24,20 +24,16 @@ def rapt(wavfile_path, **kwargs):
     original_audio = _get_audio_data(wavfile_path)
 
     if param.is_two_pass_nccf:
+        # downsample audio and run nccf on that first
         downsampled_audio = _get_downsampled_audio(original_audio,
                                                    param.maximum_allowed_freq)
-
-    # original_audio = (original_audio[0], original_audio[1].tolist())
-    # downsampled_audio = (downsampled_audio[0], downsampled_audio[1].tolist())
-
-    # calculate parameters for RAPT with input audio
-    if param.is_two_pass_nccf:
+        # calculate parameters for RAPT with input audio
         _calculate_params(param, original_audio, downsampled_audio)
+        # get f0 candidates using nccf
+        nccf_results = _run_nccf(original_audio, param, downsampled_audio)
     else:
         _calculate_params(param, original_audio)
-
-    # get f0 candidates using nccf
-    nccf_results = _run_nccf(downsampled_audio, original_audio, param)
+        nccf_results = _run_nccf(original_audio, param)
 
     # Dynamic programming - determine voicing state at each period candidate
     freq_estimate = _get_freq_estimate(nccf_results, param, original_audio[0])
@@ -60,18 +56,13 @@ def rapt_with_nccf(wavfile_path, **kwargs):
     if param.is_two_pass_nccf:
         downsampled_audio = _get_downsampled_audio(original_audio,
                                                    param.maximum_allowed_freq)
-
-    # original_audio = (original_audio[0], original_audio[1].tolist())
-    # downsampled_audio = (downsampled_audio[0], downsampled_audio[1].tolist())
-
-    # calculate parameters for RAPT with input audio
-    if param.is_two_pass_nccf:
+        # calculate parameters for RAPT with input audio
         _calculate_params(param, original_audio, downsampled_audio)
+        # get f0 candidates using nccf
+        nccf_results = _run_nccf(original_audio, param, downsampled_audio)
     else:
         _calculate_params(param, original_audio)
-
-    # get f0 candidates using nccf
-    nccf_results = _run_nccf(downsampled_audio, original_audio, param)
+        nccf_results = _run_nccf(original_audio, param)
 
     # Dynamic programming - determine voicing state at each period candidate
     freq_estimate = _get_freq_estimate(nccf_results, param, original_audio[0])
@@ -170,13 +161,35 @@ def _calculate_downsampling_rate(initial_sampling_rate, maximum_f0):
 # TODO: Consider moving nccf functions into a separate module / file?
 
 
-def _run_nccf(downsampled_audio, original_audio, raptparam):
-    first_pass = _first_pass_nccf(downsampled_audio, raptparam)
+def _run_nccf(original_audio, raptparam, downsampled_audio=None):
+    if raptparam.is_two_pass_nccf:
+        first_pass = _first_pass_nccf(downsampled_audio, raptparam)
+        # run second pass
+        nccf_results = _second_pass_nccf(original_audio, first_pass, raptparam)
+    else:
+        nccf_results = _one_pass_nccf(original_audio, raptparam)
 
-    # run second pass
-    second_pass = _second_pass_nccf(original_audio, first_pass, raptparam)
+    return nccf_results
 
-    return second_pass
+
+def _one_pass_nccf(audio, raptparam):
+    """
+    Runs NCCF on full audio sample and returns top correlations per frame
+    """
+    nccfparam = _get_nccf_params(audio, raptparam, True)
+    params = (raptparam, nccfparam)
+    # TODO: do i really use a -1 here?
+    # Difference between "K-1" and starting value of "k"
+    lag_range = ((params[1].longest_lag_per_frame - 1) -
+                 params[1].shortest_lag_per_frame)
+    candidates = [None] * params[1].max_frame_count
+
+    for i in xrange(0, params[1].max_frame_count):
+        all_lag_results = _get_correlations_for_all_lags(audio, i, lag_range,
+                                                         params)
+        candidates[i] = _get_marked_results(all_lag_results, params, False)
+
+    return candidates
 
 
 def _first_pass_nccf(audio, raptparam):
@@ -244,6 +257,7 @@ def _get_nccf_params(audio_input, raptparams, is_firstpass):
     # Value of "z" in NCCF equation
     nccfparam.samples_per_frame = int(round(raptparams.frame_step_size *
                                       audio_input[0]))
+    # TODO: do i really need to use the -1 here?
     # Value of "M-1" in NCCF equation:
     nccfparam.max_frame_count = int(round(float(len(audio_input[1])) /
                                     float(nccfparam.samples_per_frame)) - 1)
@@ -372,7 +386,7 @@ def _get_correlation(audio, frame, lag, params, is_firstpass=True):
     denominator_base = numpysum((audio_slice - float(mean_for_window))**2)
     denominator_lag = numpysum((lag_audio_slice - float(mean_for_window))**2)
 
-    if is_firstpass:
+    if is_firstpass and params[0].is_two_pass_nccf:
         denominator = math.sqrt(denominator_base * denominator_lag)
     else:
         denominator = ((denominator_base * denominator_lag) +

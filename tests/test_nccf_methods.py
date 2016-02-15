@@ -22,8 +22,8 @@ class TestNccfMethods(TestCase):
             downsampled_audio = (10, numpy.array([0, 1, 2, 3]))
             original_audio = (100, numpy.array([0, 1, 2, 3, 4, 5, 6]))
             params = raptparams.Raptparams()
-            results = pyrapt._run_nccf(downsampled_audio, original_audio,
-                                       params)
+            results = pyrapt._run_nccf(original_audio, params,
+                                       downsampled_audio)
             mock_first_pass.assert_called_once_with(downsampled_audio, params)
             mock_second_pass.assert_called_once_with(original_audio, ANY,
                                                      params)
