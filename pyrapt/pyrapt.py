@@ -113,7 +113,12 @@ def _get_downsampled_audio(original_audio, maximum_allowed_freq):
     downsample_rate = _calculate_downsampling_rate(original_audio[0],
                                                    maximum_allowed_freq)
     downsampled_audio = _downsample_audio(original_audio, downsample_rate)
-    return (downsample_rate, downsampled_audio)
+
+    # low pass filter:
+    filter = signal.firwin(100, 0.5, window='hann')
+    filtered_audio = numpy.convolve(downsampled_audio, filter)
+
+    return (downsample_rate, filtered_audio)
 
 
 def _downsample_audio(original_audio, downsampling_rate):
