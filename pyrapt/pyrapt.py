@@ -26,7 +26,8 @@ def rapt(wavfile_path, **kwargs):
     if param.is_two_pass_nccf:
         # downsample audio and run nccf on that first
         downsampled_audio = _get_downsampled_audio(original_audio,
-                                                   param.maximum_allowed_freq)
+                                                   param.maximum_allowed_freq,
+                                                   param.is_run_filter)
         # calculate parameters for RAPT with input audio
         _calculate_params(param, original_audio, downsampled_audio)
         # get f0 candidates using nccf
@@ -55,7 +56,8 @@ def rapt_with_nccf(wavfile_path, **kwargs):
 
     if param.is_two_pass_nccf:
         downsampled_audio = _get_downsampled_audio(original_audio,
-                                                   param.maximum_allowed_freq)
+                                                   param.maximum_allowed_freq,
+                                                   param.is_run_filter)
         # calculate parameters for RAPT with input audio
         _calculate_params(param, original_audio, downsampled_audio)
         # get f0 candidates using nccf
@@ -106,7 +108,7 @@ def _get_audio_data(wavfile_path):
     return (sample_rate, audio_sample)
 
 
-def _get_downsampled_audio(original_audio, maximum_allowed_freq):
+def _get_downsampled_audio(original_audio, maximum_allowed_freq, is_filter):
     """
     Calc downsampling rate, downsample audio, return as tuple
     """
@@ -115,10 +117,11 @@ def _get_downsampled_audio(original_audio, maximum_allowed_freq):
     downsampled_audio = _downsample_audio(original_audio, downsample_rate)
 
     # low pass filter:
-    filter = signal.firwin(100, 0.5, window='hann')
-    filtered_audio = numpy.convolve(downsampled_audio, filter)
+    if is_filter:
+        filter = signal.firwin(100, 0.5, window='hann')
+        downsampled_audio = numpy.convolve(downsampled_audio, filter)
 
-    return (downsample_rate, filtered_audio)
+    return (downsample_rate, downsampled_audio)
 
 
 def _downsample_audio(original_audio, downsampling_rate):

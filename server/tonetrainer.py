@@ -18,14 +18,15 @@ class Pyrapt_RPC(object):
         return freq_map
 
     def testraptforfile(self, filename, tcost, dcost, addconst, vobias, lagwt,
-                        freqwt, numcands, istwopass):
+                        freqwt, numcands, istwopass, isfilter):
         print('running TEST pyrapt.rapt...')
         freq_map = pyrapt.rapt(filename, transition_cost=tcost,
                                doubling_cost=dcost, additive_constant=addconst,
                                voicing_bias=vobias, lag_weight=lagwt,
                                freq_weight=freqwt,
                                max_hypotheses_per_frame=numcands,
-                               is_two_pass_nccf=istwopass)
+                               is_two_pass_nccf=istwopass,
+                               is_run_filter=isfilter)
         print('finished running pyrapt.rapt...')
         return freq_map
 
