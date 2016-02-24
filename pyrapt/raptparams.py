@@ -13,7 +13,7 @@ class Raptparams:
         self.is_two_pass_nccf = True
 
         # Boolean flag to run a low pass filter on the 1st pass of NCCF:
-        self.is_run_filter = True
+        self.is_run_filter = False
 
         # Value of "F0_max" in NCCF equation:
         self.maximum_allowed_freq = 500
