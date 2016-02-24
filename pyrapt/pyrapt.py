@@ -37,7 +37,8 @@ def rapt(wavfile_path, **kwargs):
         nccf_results = _run_nccf(original_audio, param)
 
     # Dynamic programming - determine voicing state at each period candidate
-    freq_estimate = _get_freq_estimate(nccf_results, param, original_audio[0])
+    freq_estimate = _get_freq_estimate(nccf_results[0], param,
+                                       original_audio[0])
 
     # return output of nccf for now
     return freq_estimate
@@ -67,7 +68,8 @@ def rapt_with_nccf(wavfile_path, **kwargs):
         nccf_results = _run_nccf(original_audio, param)
 
     # Dynamic programming - determine voicing state at each period candidate
-    freq_estimate = _get_freq_estimate(nccf_results, param, original_audio[0])
+    freq_estimate = _get_freq_estimate(nccf_results[0], param,
+                                       original_audio[0])
     # return output of nccf for now
     return (nccf_results, freq_estimate)
 
@@ -174,10 +176,10 @@ def _run_nccf(original_audio, raptparam, downsampled_audio=None):
         first_pass = _first_pass_nccf(downsampled_audio, raptparam)
         # run second pass
         nccf_results = _second_pass_nccf(original_audio, first_pass, raptparam)
+        return (nccf_results, first_pass)
     else:
         nccf_results = _one_pass_nccf(original_audio, raptparam)
-
-    return nccf_results
+        return (nccf_results, None)
 
 
 def _one_pass_nccf(audio, raptparam):

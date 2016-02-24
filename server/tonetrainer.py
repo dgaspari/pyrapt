@@ -20,25 +20,16 @@ class Pyrapt_RPC(object):
     def testraptforfile(self, filename, tcost, dcost, addconst, vobias, lagwt,
                         freqwt, numcands, istwopass, isfilter):
         print('running TEST pyrapt.rapt...')
-        freq_map = pyrapt.rapt(filename, transition_cost=tcost,
-                               doubling_cost=dcost, additive_constant=addconst,
-                               voicing_bias=vobias, lag_weight=lagwt,
-                               freq_weight=freqwt,
-                               max_hypotheses_per_frame=numcands,
-                               is_two_pass_nccf=istwopass,
-                               is_run_filter=isfilter)
+        results = pyrapt.rapt_with_nccf(filename, transition_cost=tcost,
+                                        doubling_cost=dcost,
+                                        additive_constant=addconst,
+                                        voicing_bias=vobias, lag_weight=lagwt,
+                                        freq_weight=freqwt,
+                                        max_hypotheses_per_frame=numcands,
+                                        is_two_pass_nccf=istwopass,
+                                        is_run_filter=isfilter)
         print('finished running pyrapt.rapt...')
-        return freq_map
-
-    # TODO: consider passing stream rather than a file location, to allow
-    # for the python processing to occur on a separate server
-    def raptforblob(self, blobdata):
-        # this takes a blob from javascript (base 64 encoded?) - need
-        # to convert to a file object temporarily, read as wav, then
-        # return frequency data:
-        print('received request for blob data:')
-        print(blobdata)
-        return [1, 2, 3, 4, 5]
+        return results
 
 print('Using ZeroRPC to listen on port 4242 for pitch tracker requests...')
 server = zerorpc.Server(Pyrapt_RPC())
