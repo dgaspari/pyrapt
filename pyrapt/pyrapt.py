@@ -547,14 +547,64 @@ def _determine_state_per_frame(nccf_results, raptparam, sample_rate):
         result.append((0, 0.0))
 
     # now call recursive function that will calculate cost per candidate:
-    all_candidates = _process_candidates(len(nccf_results) - 1, [],
-                                         nccf_results, raptparam, sample_rate)
+    final_candidates = _select_candidates(nccf_results, raptparam, sample_rate)
+    # sort results - take the result with the lowest cost for its last item
+    final_candidates.sort(key=lambda y: y[-1][0])
+
+    # all_candidates = _process_candidates(len(nccf_results) - 1, [],
+    #                                     nccf_results, raptparam, sample_rate)
 
     # with the results, take the lag of the lowest cost candidate per frame
-    for result in all_candidates:
+    for result in final_candidates[0]:
         # sort results - the first value, the cost, is used by default
-        candidates.append(sorted(result)[0][1][0])
+        candidates.append(result[1][0])
     return candidates
+
+
+def _select_candidates(nccf_results, params, sample_rate):
+    # start by calculating frame 0:
+    max_for_frame = _select_max_correlation_for_frame(nccf_results[0])
+    frame_candidates = []
+    for candidate in nccf_results[0]:
+        best_cost = None
+        local_cost = _calculate_local_cost(candidate, max_for_frame, params,
+                                           sample_rate)
+        for initial_candidate in [(0.0, (1, 0.1)), (0.0, (0, 0.0))]:
+            delta_cost = _get_delta_cost(candidate, initial_candidate,
+                                         0, params)
+            total_cost = local_cost + delta_cost
+            if best_cost is None or total_cost <= best_cost:
+                best_cost = total_cost
+        frame_candidates.append([(best_cost, candidate)])
+    # now we have initial costs for frame 0. lets loop thru later frames
+    final_candidates = _get_next_cands(1, frame_candidates, nccf_results,
+                                       params, sample_rate)
+    return final_candidates
+
+
+def _get_next_cands(frame_idx, prev_candidates, nccf_results, params,
+                    sample_rate):
+    frame_max = _select_max_correlation_for_frame(nccf_results[frame_idx])
+    final_candidates = []
+    for candidate in nccf_results[frame_idx]:
+        best_cost = None
+        returned_path = None
+        local_cost = _calculate_local_cost(candidate, frame_max, params,
+                                           sample_rate)
+        for prev_candidate in prev_candidates:
+            delta_cost = _get_delta_cost(candidate, prev_candidate[-1],
+                                         frame_idx, params)
+            total_cost = local_cost + delta_cost
+            if best_cost is None or total_cost <= best_cost:
+                best_cost = total_cost
+                returned_path = list(prev_candidate)
+        returned_path.append((best_cost, candidate))
+        final_candidates.append(returned_path)
+    next_idx = frame_idx + 1
+    if next_idx < len(nccf_results):
+        return _get_next_cands(next_idx, final_candidates, nccf_results,
+                               params, sample_rate)
+    return final_candidates
 
 
 def _process_candidates(frame_idx, candidates, nccf_results, raptparam,
