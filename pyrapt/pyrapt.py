@@ -551,9 +551,6 @@ def _determine_state_per_frame(nccf_results, raptparam, sample_rate):
     # sort results - take the result with the lowest cost for its last item
     final_candidates.sort(key=lambda y: y[-1][0])
 
-    # all_candidates = _process_candidates(len(nccf_results) - 1, [],
-    #                                     nccf_results, raptparam, sample_rate)
-
     # with the results, take the lag of the lowest cost candidate per frame
     for result in final_candidates[0]:
         # sort results - the first value, the cost, is used by default
@@ -607,34 +604,6 @@ def _get_next_cands(frame_idx, prev_candidates, nccf_results, params,
     return final_candidates
 
 
-def _process_candidates(frame_idx, candidates, nccf_results, raptparam,
-                        sample_rate):
-    new_candidates = []
-    # recursive step:
-    if frame_idx > 0:
-        new_candidates = _process_candidates(frame_idx-1, candidates,
-                                             nccf_results, raptparam,
-                                             sample_rate)
-    frame_candidates = _calculate_costs_per_frame(frame_idx, new_candidates,
-                                                  nccf_results, raptparam,
-                                                  sample_rate)
-    new_candidates.append(frame_candidates)
-    return new_candidates
-
-
-def _calculate_costs_per_frame(frame_idx, new_candidates, nccf_results, params,
-                               sample_rate):
-    frame_candidates = []
-    max_for_frame = _select_max_correlation_for_frame(nccf_results[frame_idx])
-    for candidate in nccf_results[frame_idx]:
-        local_cost = _calculate_local_cost(candidate, max_for_frame, params,
-                                           sample_rate)
-        best_cost = _get_best_cost(candidate, local_cost, new_candidates,
-                                   frame_idx, params)
-        frame_candidates.append((best_cost, candidate))
-    return frame_candidates
-
-
 def _select_max_correlation_for_frame(nccf_results_frame):
     maxval = 0.0
     for hypothesis in nccf_results_frame:
@@ -657,32 +626,6 @@ def _calculate_local_cost(candidate, max_corr_for_frame, params, sample_rate):
         cost = (1.0 - correlation_val * (1.0 - float(lag_weight)
                 * float(lag_val)))
     return cost
-
-
-# Determine the delta cost for each previous candidate and pick the cheapest
-def _get_best_cost(candidate, local_cost, candidate_list, frame_idx, params):
-    # need to determine best transition cost based on previous frame:
-    return_cost = None
-    # first check to see if list is empty (we are at beginning and can use
-    # predefined vals for transition costs
-    if not candidate_list:
-        # global cost is 0 for voiced/unvoiced - just transition costs matter
-        for initial_candidate in [(0.0, (1, 0.1)), (0.0, (0, 0.0))]:
-            delta_cost = _get_delta_cost(candidate, initial_candidate,
-                                         frame_idx, params)
-            total_cost = local_cost + delta_cost
-            if return_cost is None or total_cost < return_cost:
-                return_cost = total_cost
-    # if prev candidates exist, then we need to check each with a transition
-    # cost and see which is the lowest
-    else:
-        for prev_candidate in candidate_list[-1]:
-            delta_cost = _get_delta_cost(candidate, prev_candidate,
-                                         frame_idx, params)
-            total_cost = local_cost + delta_cost
-            if return_cost is None or total_cost < return_cost:
-                return_cost = total_cost
-    return return_cost
 
 
 # determine what type of transition for candidate and previous, and return delta
