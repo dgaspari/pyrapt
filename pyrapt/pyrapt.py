@@ -40,6 +40,12 @@ def rapt(wavfile_path, **kwargs):
     freq_estimate = _get_freq_estimate(nccf_results[0], param,
                                        original_audio[0])
 
+    # TODO: this is mainly for demo / niceness - don't keep this forever
+    # filter out high freq points
+    for i, item in enumerate(freq_estimate):
+        if item > 500.0:
+            freq_estimate[i] = 0.0
+
     # return output of nccf for now
     return freq_estimate
 
@@ -70,6 +76,12 @@ def rapt_with_nccf(wavfile_path, **kwargs):
     # Dynamic programming - determine voicing state at each period candidate
     freq_estimate = _get_freq_estimate(nccf_results[0], param,
                                        original_audio[0])
+    # TODO: this is mainly for demo / niceness - don't keep this forever
+    # filter out high freq points
+    for i, item in enumerate(freq_estimate):
+        if item > 500.0:
+            freq_estimate[i] = 0.0
+
     # return output of nccf for now
     return (nccf_results, freq_estimate)
 
