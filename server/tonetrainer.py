@@ -15,8 +15,7 @@ class Pyrapt_RPC(object):
         # freq_map = pyrapt.rapt(filename, doubling_cost=30.0,
         #                       max_hypotheses_per_frame=35)
         freq_map = pyrapt.rapt(filename, max_hypotheses_per_frame=25,
-                               doubling_cost=3.0, freq_weight=0.1,
-                               transition_cost=0.05, lag_weight=0.2)
+                               transition_cost=0.5, doubling_cost=30.0)
         print('finished running pyrapt.rapt...')
         return freq_map
 
